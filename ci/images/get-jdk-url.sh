@@ -2,16 +2,13 @@
 set -e
 
 case "$1" in
-	java8)
-		 echo "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u302-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u302b08.tar.gz"
-	;;
-	java11)
-		 echo "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.12%2B7/OpenJDK11U-jdk_x64_linux_hotspot_11.0.12_7.tar.gz"
-	;;
-  java16)
-		 echo "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz"
+  java17)
+    echo "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.1%2B12/OpenJDK17U-jdk_x64_linux_hotspot_17.0.1_12.tar.gz"
+  ;;
+  java18)
+    echo "https://github.com/adoptium/temurin18-binaries/releases/download/jdk-2021-11-17-08-12-beta/OpenJDK-jdk_x64_linux_hotspot_2021-11-16-23-30.tar.gz"
   ;;
   *)
-		echo $"Unknown java version"
-		exit 1
+    echo $"Unknown java version"
+    exit 1
 esac
