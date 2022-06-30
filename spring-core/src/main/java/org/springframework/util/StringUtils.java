@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,8 @@ public abstract class StringUtils {
 	private static final String[] EMPTY_STRING_ARRAY = {};
 
 	private static final String FOLDER_SEPARATOR = "/";
+
+	private static final char FOLDER_SEPARATOR_CHAR = '/';
 
 	private static final String WINDOWS_FOLDER_SEPARATOR = "\\";
 
@@ -218,24 +220,15 @@ public abstract class StringUtils {
 	 * @param str the {@code String} to check
 	 * @return the trimmed {@code String}
 	 * @see java.lang.Character#isWhitespace
+	 * @deprecated in favor of {@link String#strip()}
 	 */
+	@Deprecated
 	public static String trimWhitespace(String str) {
 		if (!hasLength(str)) {
 			return str;
 		}
 
-		int beginIndex = 0;
-		int endIndex = str.length() - 1;
-
-		while (beginIndex <= endIndex && Character.isWhitespace(str.charAt(beginIndex))) {
-			beginIndex++;
-		}
-
-		while (endIndex > beginIndex && Character.isWhitespace(str.charAt(endIndex))) {
-			endIndex--;
-		}
-
-		return str.substring(beginIndex, endIndex + 1);
+		return str.strip();
 	}
 
 	/**
@@ -266,17 +259,15 @@ public abstract class StringUtils {
 	 * @param str the {@code String} to check
 	 * @return the trimmed {@code String}
 	 * @see java.lang.Character#isWhitespace
+	 * @deprecated in favor of {@link String#stripLeading()}
 	 */
+	@Deprecated
 	public static String trimLeadingWhitespace(String str) {
 		if (!hasLength(str)) {
 			return str;
 		}
 
-		int beginIdx = 0;
-		while (beginIdx < str.length() && Character.isWhitespace(str.charAt(beginIdx))) {
-			beginIdx++;
-		}
-		return str.substring(beginIdx);
+		return str.stripLeading();
 	}
 
 	/**
@@ -284,17 +275,15 @@ public abstract class StringUtils {
 	 * @param str the {@code String} to check
 	 * @return the trimmed {@code String}
 	 * @see java.lang.Character#isWhitespace
+	 * @deprecated in favor of {@link String#stripTrailing()}
 	 */
+	@Deprecated
 	public static String trimTrailingWhitespace(String str) {
 		if (!hasLength(str)) {
 			return str;
 		}
 
-		int endIdx = str.length() - 1;
-		while (endIdx >= 0 && Character.isWhitespace(str.charAt(endIdx))) {
-			endIdx--;
-		}
-		return str.substring(0, endIdx + 1);
+		return str.stripTrailing();
 	}
 
 	/**
@@ -581,7 +570,7 @@ public abstract class StringUtils {
 			return null;
 		}
 
-		int separatorIndex = path.lastIndexOf(FOLDER_SEPARATOR);
+		int separatorIndex = path.lastIndexOf(FOLDER_SEPARATOR_CHAR);
 		return (separatorIndex != -1 ? path.substring(separatorIndex + 1) : path);
 	}
 
@@ -602,7 +591,7 @@ public abstract class StringUtils {
 			return null;
 		}
 
-		int folderIndex = path.lastIndexOf(FOLDER_SEPARATOR);
+		int folderIndex = path.lastIndexOf(FOLDER_SEPARATOR_CHAR);
 		if (folderIndex > extIndex) {
 			return null;
 		}
@@ -622,7 +611,7 @@ public abstract class StringUtils {
 			return path;
 		}
 
-		int folderIndex = path.lastIndexOf(FOLDER_SEPARATOR);
+		int folderIndex = path.lastIndexOf(FOLDER_SEPARATOR_CHAR);
 		if (folderIndex > extIndex) {
 			return path;
 		}
@@ -639,11 +628,11 @@ public abstract class StringUtils {
 	 * @return the full file path that results from applying the relative path
 	 */
 	public static String applyRelativePath(String path, String relativePath) {
-		int separatorIndex = path.lastIndexOf(FOLDER_SEPARATOR);
+		int separatorIndex = path.lastIndexOf(FOLDER_SEPARATOR_CHAR);
 		if (separatorIndex != -1) {
 			String newPath = path.substring(0, separatorIndex);
 			if (!relativePath.startsWith(FOLDER_SEPARATOR)) {
-				newPath += FOLDER_SEPARATOR;
+				newPath += FOLDER_SEPARATOR_CHAR;
 			}
 			return newPath + relativePath;
 		}
@@ -802,11 +791,11 @@ public abstract class StringUtils {
 
 	/**
 	 * Parse the given {@code String} value into a {@link Locale}, accepting
-	 * the {@link Locale#toString} format as well as BCP 47 language tags.
+	 * the {@link Locale#toString} format as well as BCP 47 language tags as
+	 * specified by {@link Locale#forLanguageTag}.
 	 * @param localeValue the locale value: following either {@code Locale's}
 	 * {@code toString()} format ("en", "en_UK", etc), also accepting spaces as
 	 * separators (as an alternative to underscores), or BCP 47 (e.g. "en-UK")
-	 * as specified by {@link Locale#forLanguageTag} on Java 7+
 	 * @return a corresponding {@code Locale} instance, or {@code null} if none
 	 * @throws IllegalArgumentException in case of an invalid locale specification
 	 * @since 5.0.4
@@ -862,7 +851,7 @@ public abstract class StringUtils {
 			// code sans the separator between the country code and the variant.
 			int endIndexOfCountryCode = localeString.indexOf(country, language.length()) + country.length();
 			// Strip off any leading '_' and whitespace, what's left is the variant.
-			variant = trimLeadingWhitespace(localeString.substring(endIndexOfCountryCode));
+			variant = localeString.substring(endIndexOfCountryCode).stripLeading();
 			if (variant.startsWith("_")) {
 				variant = trimLeadingCharacter(variant, '_');
 			}

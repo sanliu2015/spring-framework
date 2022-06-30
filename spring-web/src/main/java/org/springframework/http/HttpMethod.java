@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package org.springframework.http;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -35,11 +37,6 @@ import org.springframework.util.Assert;
 public final class HttpMethod implements Comparable<HttpMethod>, Serializable {
 
 	private static final long serialVersionUID = -70133475680645360L;
-
-	private static final HttpMethod[] values;
-
-	private static final Map<String, HttpMethod> mappings = new HashMap<>(16);
-
 
 	/**
 	 * The HTTP method {@code GET}.
@@ -89,13 +86,10 @@ public final class HttpMethod implements Comparable<HttpMethod>, Serializable {
 	 */
 	public static final HttpMethod TRACE = new HttpMethod("TRACE");
 
+	private static final HttpMethod[] values = new HttpMethod[] { GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS, TRACE };
 
-	static {
-		values = new HttpMethod[]{GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS, TRACE};
-		for (HttpMethod httpMethod : values) {
-			mappings.put(httpMethod.name(), httpMethod);
-		}
-	}
+	private static final Map<String, HttpMethod> mappings = Arrays.stream(values)
+			.collect(Collectors.toUnmodifiableMap(HttpMethod::name, Function.identity()));
 
 
 	private final String name;
@@ -126,7 +120,7 @@ public final class HttpMethod implements Comparable<HttpMethod>, Serializable {
 	 * @return the corresponding {@code HttpMethod}
 	 */
 	public static HttpMethod valueOf(String method) {
-		Assert.notNull(method, "Name must not be null");
+		Assert.notNull(method, "Method must not be null");
 		HttpMethod result = mappings.get(method);
 		if (result != null) {
 			return result;
@@ -183,8 +177,8 @@ public final class HttpMethod implements Comparable<HttpMethod>, Serializable {
 		if (this == o) {
 			return true;
 		}
-		else if (o instanceof HttpMethod other) {
-			return this.name.equals(other.name);
+		else if (o instanceof HttpMethod otherMethod) {
+			return this.name.equals(otherMethod.name);
 		}
 		return false;
 	}
@@ -193,4 +187,5 @@ public final class HttpMethod implements Comparable<HttpMethod>, Serializable {
 	public String toString() {
 		return this.name;
 	}
+
 }

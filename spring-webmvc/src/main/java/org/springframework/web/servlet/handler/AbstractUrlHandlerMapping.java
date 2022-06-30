@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
-import org.springframework.http.server.PathContainer;
 import org.springframework.http.server.RequestPath;
 import org.springframework.lang.Nullable;
 import org.springframework.util.AntPathMatcher;
@@ -76,7 +75,7 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 
 
 	@Override
-	public void setPatternParser(PathPatternParser patternParser) {
+	public void setPatternParser(@Nullable PathPatternParser patternParser) {
 		Assert.state(this.handlerMap.isEmpty(),
 				"PathPatternParser must be set before the initialization of " +
 						"the handler map via ApplicationContextAware#setApplicationContext.");
@@ -105,7 +104,10 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 	 * Whether to match to URLs irrespective of the presence of a trailing slash.
 	 * If enabled a URL pattern such as "/users" also matches to "/users/".
 	 * <p>The default value is {@code false}.
+	 * @deprecated as of 6.0, see
+	 * {@link PathPatternParser#setMatchOptionalTrailingSeparator(boolean)}
 	 */
+	@Deprecated
 	public void setUseTrailingSlashMatch(boolean useTrailingSlashMatch) {
 		this.useTrailingSlashMatch = useTrailingSlashMatch;
 		if (getPatternParser() != null) {
@@ -214,8 +216,9 @@ public abstract class AbstractUrlHandlerMapping extends AbstractHandlerMapping i
 			handler = obtainApplicationContext().getBean(handlerName);
 		}
 		validateHandler(handler, request);
-		PathContainer pathWithinMapping = pattern.extractPathWithinPattern(path.pathWithinApplication());
-		return buildPathExposingHandler(handler, pattern.getPatternString(), pathWithinMapping.value(), null);
+		String pathWithinMapping = pattern.extractPathWithinPattern(path.pathWithinApplication()).value();
+		pathWithinMapping = UrlPathHelper.defaultInstance.removeSemicolonContent(pathWithinMapping);
+		return buildPathExposingHandler(handler, pattern.getPatternString(), pathWithinMapping, null);
 	}
 
 	/**

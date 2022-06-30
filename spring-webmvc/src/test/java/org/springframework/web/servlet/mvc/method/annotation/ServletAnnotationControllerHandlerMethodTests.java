@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1896,6 +1896,18 @@ public class ServletAnnotationControllerHandlerMethodTests extends AbstractServl
 		assertThat(response.getForwardedUrl()).isEqualTo("view");
 	}
 
+	@PathPatternsParameterizedTest
+	void modelAndViewWithStatusForRedirect(boolean usePathPatterns) throws Exception {
+		initDispatcherServlet(ModelAndViewController.class, usePathPatterns);
+
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/redirect");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		getServlet().service(request, response);
+
+		assertThat(response.getStatus()).isEqualTo(307);
+		assertThat(response.getRedirectedUrl()).isEqualTo("/path");
+	}
+
 	@PathPatternsParameterizedTest // SPR-14796
 	void modelAndViewWithStatusInExceptionHandler(boolean usePathPatterns) throws Exception {
 		initDispatcherServlet(ModelAndViewController.class, usePathPatterns);
@@ -2235,6 +2247,7 @@ public class ServletAnnotationControllerHandlerMethodTests extends AbstractServl
 		assertThat(response.getStatus()).isEqualTo(200);
 		assertThat(response.getContentAsString()).isEqualTo("foo-body");
 	}
+
 
 	@Controller
 	static class ControllerWithEmptyValueMapping {
@@ -3573,7 +3586,6 @@ public class ServletAnnotationControllerHandlerMethodTests extends AbstractServl
 			assertThat(headers.getContentType()).as("Invalid Content-Type").isEqualTo(new MediaType("text", "html"));
 			multiValueMap(headers, writer);
 		}
-
 	}
 
 	@Controller
@@ -3837,7 +3849,7 @@ public class ServletAnnotationControllerHandlerMethodTests extends AbstractServl
 	@Controller
 	static class HttpHeadersResponseController {
 
-		@RequestMapping(value = "", method = RequestMethod.POST)
+		@RequestMapping(value = "/", method = RequestMethod.POST)
 		@ResponseStatus(HttpStatus.CREATED)
 		public HttpHeaders create() throws URISyntaxException {
 			HttpHeaders headers = new HttpHeaders();
@@ -3882,6 +3894,11 @@ public class ServletAnnotationControllerHandlerMethodTests extends AbstractServl
 		@RequestMapping("/path")
 		public ModelAndView methodWithHttpStatus(MyEntity object) {
 			return new ModelAndView("view", HttpStatus.UNPROCESSABLE_ENTITY);
+		}
+
+		@RequestMapping("/redirect")
+		public ModelAndView methodWithHttpStatusForRedirect(MyEntity object) {
+			return new ModelAndView("redirect:/path", HttpStatus.TEMPORARY_REDIRECT);
 		}
 
 		@RequestMapping("/exception")

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ import org.springframework.web.reactive.result.method.RequestMappingInfo.Builder
 import org.springframework.web.server.MethodNotAllowedException;
 import org.springframework.web.server.NotAcceptableStatusException;
 import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.ServerWebInputException;
+import org.springframework.web.server.UnsatisfiedRequestParameterException;
 import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 import org.springframework.web.testfixture.http.server.reactive.MockServerHttpRequest;
 import org.springframework.web.testfixture.server.MockServerWebExchange;
@@ -119,10 +119,6 @@ public class RequestMappingInfoHandlerMappingTests {
 		ServerWebExchange exchange = MockServerWebExchange.from(get(""));
 		HandlerMethod hm = (HandlerMethod) this.handlerMapping.getHandler(exchange).block();
 		assertThat(hm.getMethod()).isEqualTo(expected);
-
-		exchange = MockServerWebExchange.from(get("/"));
-		hm = (HandlerMethod) this.handlerMapping.getHandler(exchange).block();
-		assertThat(hm.getMethod()).isEqualTo(expected);
 	}
 
 	@Test
@@ -157,7 +153,6 @@ public class RequestMappingInfoHandlerMappingTests {
 	@Test  // SPR-8462
 	public void getHandlerMediaTypeNotSupported() {
 		testHttpMediaTypeNotSupportedException("/person/1");
-		testHttpMediaTypeNotSupportedException("/person/1/");
 		testHttpMediaTypeNotSupportedException("/person/1.json");
 	}
 
@@ -175,14 +170,13 @@ public class RequestMappingInfoHandlerMappingTests {
 	@Test  // SPR-8462
 	public void getHandlerTestMediaTypeNotAcceptable() {
 		testMediaTypeNotAcceptable("/persons");
-		testMediaTypeNotAcceptable("/persons/");
 	}
 
 	@Test  // SPR-12854
 	public void getHandlerTestRequestParamMismatch() {
 		ServerWebExchange exchange = MockServerWebExchange.from(get("/params"));
 		Mono<Object> mono = this.handlerMapping.getHandler(exchange);
-		assertError(mono, ServerWebInputException.class, ex -> {
+		assertError(mono, UnsatisfiedRequestParameterException.class, ex -> {
 			assertThat(ex.getReason()).contains("[foo=bar]");
 			assertThat(ex.getReason()).contains("[bar=baz]");
 		});
@@ -212,7 +206,9 @@ public class RequestMappingInfoHandlerMappingTests {
 		exchange = MockServerWebExchange.from(get("/content").accept(MediaType.APPLICATION_JSON));
 		this.handlerMapping.getHandler(exchange).block();
 
-		assertThat(exchange.getAttributes().get(name)).as("Negated expression shouldn't be listed as producible type").isNull();
+		assertThat(exchange.getAttributes().get(name))
+				.as("Negated expression shouldn't be listed as producible type")
+				.isNull();
 	}
 
 	@Test
@@ -330,7 +326,7 @@ public class RequestMappingInfoHandlerMappingTests {
 					UnsupportedMediaTypeStatusException umtse = (UnsupportedMediaTypeStatusException) ex;
 					MediaType mediaType = new MediaType("foo", "bar");
 					assertThat(umtse.getSupportedMediaTypes()).containsExactly(mediaType);
-					assertThat(umtse.getResponseHeaders().getAcceptPatch()).containsExactly(mediaType);
+					assertThat(umtse.getHeaders().getAcceptPatch()).containsExactly(mediaType);
 				})
 				.verify();
 
@@ -352,7 +348,9 @@ public class RequestMappingInfoHandlerMappingTests {
 		ServerWebExchange exchange = MockServerWebExchange.from(request);
 		Mono<Object> mono = this.handlerMapping.getHandler(exchange);
 
-		assertError(mono, UnsupportedMediaTypeStatusException.class, ex -> assertThat(ex.getSupportedMediaTypes()).as("Invalid supported consumable media types").isEqualTo(Collections.singletonList(new MediaType("application", "xml"))));
+		assertError(mono, UnsupportedMediaTypeStatusException.class, ex -> assertThat(ex.getSupportedMediaTypes())
+				.as("Invalid supported consumable media types")
+				.isEqualTo(Collections.singletonList(new MediaType("application", "xml"))));
 	}
 
 	private void testHttpOptions(String requestURI, Set<HttpMethod> allowedMethods, @Nullable MediaType acceptPatch) {
@@ -382,7 +380,9 @@ public class RequestMappingInfoHandlerMappingTests {
 		ServerWebExchange exchange = MockServerWebExchange.from(get(url).accept(MediaType.APPLICATION_JSON));
 		Mono<Object> mono = this.handlerMapping.getHandler(exchange);
 
-		assertError(mono, NotAcceptableStatusException.class, ex -> assertThat(ex.getSupportedMediaTypes()).as("Invalid supported producible media types").isEqualTo(Collections.singletonList(new MediaType("application", "xml"))));
+		assertError(mono, NotAcceptableStatusException.class, ex -> assertThat(ex.getSupportedMediaTypes())
+				.as("Invalid supported producible media types")
+				.isEqualTo(Collections.singletonList(new MediaType("application", "xml"))));
 	}
 
 	private void handleMatch(ServerWebExchange exchange, String pattern) {
