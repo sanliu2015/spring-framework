@@ -24,9 +24,10 @@ import java.util.stream.Stream;
 import org.springframework.aot.hint.ClassProxyHint.Builder;
 
 /**
- * Gather the need of using proxies at runtime.
+ * Gather the need for using proxies at runtime.
  *
  * @author Stephane Nicoll
+ * @author Sam Brannen
  * @since 6.0
  */
 public class ProxyHints {
@@ -37,7 +38,7 @@ public class ProxyHints {
 
 
 	/**
-	 * Return the interfaces-based proxies that are required.
+	 * Return the interface-based proxies that are required.
 	 * @return a stream of {@link JdkProxyHint}
 	 */
 	public Stream<JdkProxyHint> jdkProxies() {
@@ -54,7 +55,7 @@ public class ProxyHints {
 
 	/**
 	 * Register a {@link JdkProxyHint}.
-	 * @param jdkProxyHint the supplier to the hint
+	 * @param jdkProxyHint the consumer of the hint builder
 	 * @return {@code this}, to facilitate method chaining
 	 */
 	public ProxyHints registerJdkProxy(Consumer<JdkProxyHint.Builder> jdkProxyHint) {
@@ -66,8 +67,9 @@ public class ProxyHints {
 
 	/**
 	 * Register that a JDK proxy implementing the interfaces defined by the
-	 * specified {@link TypeReference type references} is required.
-	 * @param proxiedInterfaces the interfaces the proxy should implement
+	 * specified {@linkplain TypeReference type references} is required.
+	 * @param proxiedInterfaces the type references for the interfaces the proxy
+	 * should implement
 	 * @return {@code this}, to facilitate method chaining
 	 */
 	public ProxyHints registerJdkProxy(TypeReference... proxiedInterfaces) {
@@ -78,6 +80,9 @@ public class ProxyHints {
 	/**
 	 * Register that a JDK proxy implementing the specified interfaces is
 	 * required.
+	 * <p>When registering a JDK proxy for Spring AOP, consider using
+	 * {@link org.springframework.aop.framework.AopProxyUtils#completeJdkProxyInterfaces(Class...)
+	 * AopProxyUtils.completeJdkProxyInterfaces()} for convenience.
 	 * @param proxiedInterfaces the interfaces the proxy should implement
 	 * @return {@code this}, to facilitate method chaining
 	 */
@@ -87,14 +92,29 @@ public class ProxyHints {
 	}
 
 	/**
+	 * Register that a JDK proxy implementing the specified interfaces is
+	 * required.
+	 * <p>When registering a JDK proxy for Spring AOP, consider using
+	 * {@link org.springframework.aop.framework.AopProxyUtils#completeJdkProxyInterfaces(String...)
+	 * AopProxyUtils.completeJdkProxyInterfaces()} for convenience.
+	 * @param proxiedInterfaces the fully qualified class names of interfaces the
+	 * proxy should implement
+	 * @return {@code this}, to facilitate method chaining
+	 */
+	public ProxyHints registerJdkProxy(String... proxiedInterfaces) {
+		return registerJdkProxy(jdkProxyHint ->
+				jdkProxyHint.proxiedInterfaces(proxiedInterfaces));
+	}
+
+	/**
 	 * Register that a class proxy is required for the class defined by the
 	 * specified {@link TypeReference}.
-	 * @param targetClass the target class of the proxy
+	 * @param typeReference the type reference for the target class of the proxy
 	 * @param classProxyHint a builder to further customize the hint for that proxy
 	 * @return {@code this}, to facilitate method chaining
 	 */
-	public ProxyHints registerClassProxy(TypeReference targetClass, Consumer<Builder> classProxyHint) {
-		return addClassProxyHint(ClassProxyHint.of(targetClass), classProxyHint);
+	public ProxyHints registerClassProxy(TypeReference typeReference, Consumer<Builder> classProxyHint) {
+		return addClassProxyHint(ClassProxyHint.of(typeReference), classProxyHint);
 	}
 
 	/**

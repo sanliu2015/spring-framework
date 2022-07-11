@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
  * Tests for {@link ProxyHints}.
  *
  * @author Stephane Nicoll
+ * @author Sam Brannen
  */
 class ProxyHintsTests {
 
@@ -52,20 +53,27 @@ class ProxyHintsTests {
 
 	@Test
 	void registerJdkProxyWithInterfaceClassNames() {
-		this.proxyHints.registerJdkProxy(TypeReference.of(Function.class),
-				TypeReference.of("com.example.Advised"));
-		assertThat(this.proxyHints.jdkProxies()).singleElement().satisfies(proxiedInterfaces(
-				Function.class.getName(), "com.example.Advised"));
+		this.proxyHints.registerJdkProxy(Function.class.getName(), "com.example.Advised");
+		assertThat(this.proxyHints.jdkProxies()).singleElement()
+				.satisfies(proxiedInterfaces(Function.class.getName(), "com.example.Advised"));
 	}
 
 	@Test
-	void registerJdkProxyWithSupplier() {
+	void registerJdkProxyWithTypeReferences() {
+		this.proxyHints.registerJdkProxy(TypeReference.of(Function.class),
+				TypeReference.of("com.example.Advised"));
+		assertThat(this.proxyHints.jdkProxies()).singleElement()
+				.satisfies(proxiedInterfaces(Function.class.getName(), "com.example.Advised"));
+	}
+
+	@Test
+	void registerJdkProxyWithConsumer() {
 		this.proxyHints.registerJdkProxy(springProxy(TypeReference.of("com.example.Test")));
 		assertThat(this.proxyHints.jdkProxies()).singleElement().satisfies(proxiedInterfaces(
+				"com.example.Test",
 				"org.springframework.aop.SpringProxy",
 				"org.springframework.aop.framework.Advised",
-				"org.springframework.core.DecoratingProxy",
-				"com.example.Test"));
+				"org.springframework.core.DecoratingProxy"));
 	}
 
 	@Test
@@ -102,10 +110,11 @@ class ProxyHintsTests {
 	}
 
 	private static Consumer<JdkProxyHint.Builder> springProxy(TypeReference proxiedInterface) {
-		return builder -> builder.proxiedInterfaces(Stream.of("org.springframework.aop.SpringProxy",
+		return builder -> builder
+				.proxiedInterfaces(proxiedInterface)
+				.proxiedInterfaces(Stream.of("org.springframework.aop.SpringProxy",
 								"org.springframework.aop.framework.Advised", "org.springframework.core.DecoratingProxy")
-						.map(TypeReference::of).toArray(TypeReference[]::new))
-				.proxiedInterfaces(proxiedInterface);
+						.map(TypeReference::of).toArray(TypeReference[]::new));
 	}
 
 	private Consumer<JdkProxyHint> proxiedInterfaces(String... proxiedInterfaces) {

@@ -25,11 +25,11 @@ import java.util.Objects;
 import org.springframework.lang.Nullable;
 
 /**
- * A hint that describes the need of a JDK {@link Proxy}, that is an
- * interfaces-based proxy.
+ * A hint that describes the need for a JDK interface-based {@link Proxy}.
  *
  * @author Stephane Nicoll
  * @author Brian Clozel
+ * @author Sam Brannen
  * @since 6.0
  */
 public final class JdkProxyHint implements ConditionalHint {
@@ -132,6 +132,17 @@ public final class JdkProxyHint implements ConditionalHint {
 		}
 
 		/**
+		 * Add the specified interfaces that the proxy should implement.
+		 * @param proxiedInterfaces the fully qualified class names of interfaces
+		 * the proxy should implement
+		 * @return {@code this}, to facilitate method chaining
+		 */
+		public Builder proxiedInterfaces(String... proxiedInterfaces) {
+			this.proxiedInterfaces.addAll(toTypeReferences(proxiedInterfaces));
+			return this;
+		}
+
+		/**
 		 * Make this hint conditional on the fact that the specified type
 		 * can be resolved.
 		 * @param reachableType the type that should be reachable for this
@@ -145,7 +156,7 @@ public final class JdkProxyHint implements ConditionalHint {
 
 		/**
 		 * Create a {@link JdkProxyHint} based on the state of this builder.
-		 * @return a jdk proxy hint
+		 * @return a JDK proxy hint
 		 */
 		JdkProxyHint build() {
 			return new JdkProxyHint(this);
@@ -157,6 +168,10 @@ public final class JdkProxyHint implements ConditionalHint {
 			if (!concreteTypes.isEmpty()) {
 				throw new IllegalArgumentException("Not an interface: " + concreteTypes);
 			}
+			return Arrays.stream(proxiedInterfaces).map(TypeReference::of).toList();
+		}
+
+		private static List<TypeReference> toTypeReferences(String... proxiedInterfaces) {
 			return Arrays.stream(proxiedInterfaces).map(TypeReference::of).toList();
 		}
 
