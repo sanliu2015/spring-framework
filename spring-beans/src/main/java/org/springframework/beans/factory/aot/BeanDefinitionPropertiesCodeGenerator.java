@@ -21,8 +21,10 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -31,7 +33,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import org.springframework.aot.generate.MethodGenerator;
+import org.springframework.aot.generate.GeneratedMethods;
 import org.springframework.aot.hint.ExecutableHint;
 import org.springframework.aot.hint.ExecutableMode;
 import org.springframework.aot.hint.RuntimeHints;
@@ -81,7 +83,7 @@ class BeanDefinitionPropertiesCodeGenerator {
 
 	private static final String BEAN_DEFINITION_VARIABLE = BeanRegistrationCodeFragments.BEAN_DEFINITION_VARIABLE;
 
-	private static final	Consumer<ExecutableHint.Builder> INVOKE_HINT = hint -> hint.withMode(ExecutableMode.INVOKE);
+	private static final Consumer<ExecutableHint.Builder> INVOKE_HINT = hint -> hint.withMode(ExecutableMode.INVOKE);
 
 	private static final BeanInfoFactory beanInfoFactory = new ExtendedBeanInfoFactory();
 
@@ -95,14 +97,14 @@ class BeanDefinitionPropertiesCodeGenerator {
 
 
 	BeanDefinitionPropertiesCodeGenerator(RuntimeHints hints,
-			Predicate<String> attributeFilter, MethodGenerator methodGenerator,
+			Predicate<String> attributeFilter, GeneratedMethods generatedMethods,
 			BiFunction<String, Object, CodeBlock> customValueCodeGenerator) {
 
 		this.hints = hints;
 		this.attributeFilter = attributeFilter;
 		this.customValueCodeGenerator = customValueCodeGenerator;
 		this.valueCodeGenerator = new BeanDefinitionPropertyValueCodeGenerator(
-				methodGenerator);
+				generatedMethods);
 	}
 
 
@@ -138,22 +140,21 @@ class BeanDefinitionPropertiesCodeGenerator {
 
 	private void addInitDestroyMethods(Builder builder,
 			AbstractBeanDefinition beanDefinition, @Nullable String[] methodNames, String format) {
-
-		if (!ObjectUtils.isEmpty(methodNames)) {
-			Class<?> beanType = ClassUtils
-					.getUserClass(beanDefinition.getResolvableType().toClass());
-			Builder arguments = CodeBlock.builder();
-			for (int i = 0; i < methodNames.length; i++) {
-				String methodName = methodNames[i];
-				if (!AbstractBeanDefinition.INFER_METHOD.equals(methodName)) {
-					arguments.add((i != 0) ? ", $S" : "$S", methodName);
-					addInitDestroyHint(beanType, methodName);
-				}
-			}
-			if (!arguments.isEmpty()) {
-				builder.addStatement(format, BEAN_DEFINITION_VARIABLE, arguments.build());
-			}
+		List<String> filteredMethodNames = (!ObjectUtils.isEmpty(methodNames))
+				? Arrays.stream(methodNames).filter(this::isNotInferredMethod).toList()
+				: Collections.emptyList();
+		if (!filteredMethodNames.isEmpty()) {
+			Class<?> beanType = ClassUtils.getUserClass(beanDefinition.getResolvableType().toClass());
+			filteredMethodNames.forEach(methodName -> addInitDestroyHint(beanType, methodName));
+			CodeBlock arguments = filteredMethodNames.stream()
+					.map(name -> CodeBlock.of("$S", name))
+					.collect(CodeBlock.joining(", "));
+			builder.addStatement(format, BEAN_DEFINITION_VARIABLE, arguments);
 		}
+	}
+
+	private boolean isNotInferredMethod(String candidate) {
+		return !AbstractBeanDefinition.INFER_METHOD.equals(candidate);
 	}
 
 	private void addInitDestroyHint(Class<?> beanUserClass, String methodName) {
@@ -264,21 +265,17 @@ class BeanDefinitionPropertiesCodeGenerator {
 	}
 
 	private CodeBlock toStringVarArgs(String[] strings) {
-		CodeBlock.Builder builder = CodeBlock.builder();
-		for (int i = 0; i < strings.length; i++) {
-			builder.add((i != 0) ? ", " : "");
-			builder.add("$S", strings[i]);
-		}
-		return builder.build();
+		return Arrays.stream(strings).map(string -> CodeBlock.of("$S", string))
+				.collect(CodeBlock.joining(","));
 	}
 
 	private Object toRole(int value) {
 		return switch (value) {
-		case BeanDefinition.ROLE_INFRASTRUCTURE -> CodeBlock.builder()
-				.add("$T.ROLE_INFRASTRUCTURE", BeanDefinition.class).build();
-		case BeanDefinition.ROLE_SUPPORT -> CodeBlock.builder()
-				.add("$T.ROLE_SUPPORT", BeanDefinition.class).build();
-		default -> value;
+			case BeanDefinition.ROLE_INFRASTRUCTURE -> CodeBlock.builder()
+					.add("$T.ROLE_INFRASTRUCTURE", BeanDefinition.class).build();
+			case BeanDefinition.ROLE_SUPPORT -> CodeBlock.builder()
+					.add("$T.ROLE_SUPPORT", BeanDefinition.class).build();
+			default -> value;
 		};
 	}
 

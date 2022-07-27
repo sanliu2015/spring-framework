@@ -110,10 +110,24 @@ class AopProxyUtilsTests {
 	}
 
 	@Test
+	void completeJdkProxyInterfacesFromNullInterface() {
+		assertThatIllegalArgumentException()
+			.isThrownBy(() -> AopProxyUtils.completeJdkProxyInterfaces(ITestBean.class, null, Comparable.class))
+			.withMessage("'userInterfaces' must not contain null values");
+	}
+
+	@Test
 	void completeJdkProxyInterfacesFromClassThatIsNotAnInterface() {
 		assertThatIllegalArgumentException()
 			.isThrownBy(() -> AopProxyUtils.completeJdkProxyInterfaces(TestBean.class))
-			.withMessage(TestBean.class.getName() + " must be an interface");
+			.withMessage(TestBean.class.getName() + " must be a non-sealed interface");
+	}
+
+	@Test
+	void completeJdkProxyInterfacesFromSealedInterface() {
+		assertThatIllegalArgumentException()
+			.isThrownBy(() -> AopProxyUtils.completeJdkProxyInterfaces(SealedInterface.class))
+			.withMessage(SealedInterface.class.getName() + " must be a non-sealed interface");
 	}
 
 	@Test
@@ -130,35 +144,11 @@ class AopProxyUtilsTests {
 				ITestBean.class, Comparable.class, SpringProxy.class, Advised.class, DecoratingProxy.class);
 	}
 
-	@Test
-	void completeJdkProxyInterfacesIgnoresSealedInterfaces() {
-		Class<?>[] jdkProxyInterfaces = AopProxyUtils.completeJdkProxyInterfaces(SealedInterface.class, Comparable.class);
-		assertThat(jdkProxyInterfaces).containsExactly(
-				Comparable.class, SpringProxy.class, Advised.class, DecoratingProxy.class);
-	}
-
-	@Test
-	void completeJdkProxyInterfacesFromSingleClassName() {
-		String[] jdkProxyInterfaces = AopProxyUtils.completeJdkProxyInterfaces(ITestBean.class.getName());
-		assertThat(jdkProxyInterfaces).containsExactly(
-				ITestBean.class.getName(), SpringProxy.class.getName(), Advised.class.getName(),
-				DecoratingProxy.class.getName());
-	}
-
-	@Test
-	void completeJdkProxyInterfacesFromMultipleClassNames() {
-		String[] jdkProxyInterfaces =
-				AopProxyUtils.completeJdkProxyInterfaces(ITestBean.class.getName(), Comparable.class.getName());
-		assertThat(jdkProxyInterfaces).containsExactly(
-				ITestBean.class.getName(), Comparable.class.getName(), SpringProxy.class.getName(),
-				Advised.class.getName(), DecoratingProxy.class.getName());
-	}
-
 
 	sealed interface SealedInterface {
 	}
 
-	static final class SealedType implements SealedInterface {
+	static final class SealedClass implements SealedInterface {
 	}
 
 }

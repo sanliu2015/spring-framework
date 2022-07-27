@@ -32,10 +32,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Mark Fisher
  * @since 3.0
  */
-public class PeriodicTriggerTests {
+class PeriodicTriggerTests {
 
 	@Test
-	public void fixedDelayFirstExecution() {
+	void fixedDelayFirstExecution() {
 		Instant now = Instant.now();
 		PeriodicTrigger trigger = new PeriodicTrigger(Duration.ofMillis(5000));
 		Instant next = trigger.nextExecution(context(null, null, null));
@@ -43,7 +43,8 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedDelayWithInitialDelayFirstExecution() {
+	@SuppressWarnings("deprecation")
+	void fixedDelayWithInitialDelayFirstExecution() {
 		Instant now = Instant.now();
 		long period = 5000;
 		long initialDelay = 30000;
@@ -54,7 +55,7 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedDelayWithTimeUnitFirstExecution() {
+	void fixedDelayWithTimeUnitFirstExecution() {
 		Instant now = Instant.now();
 		PeriodicTrigger trigger = new PeriodicTrigger(Duration.ofSeconds(5));
 		Instant next = trigger.nextExecution(context(null, null, null));
@@ -62,7 +63,7 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedDelayWithTimeUnitAndInitialDelayFirstExecution() {
+	void fixedDelayWithTimeUnitAndInitialDelayFirstExecution() {
 		Instant now = Instant.now();
 		long period = 5;
 		long initialDelay = 30;
@@ -73,7 +74,7 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedDelaySubsequentExecution() {
+	void fixedDelaySubsequentExecution() {
 		Instant now = Instant.now();
 		long period = 5000;
 		PeriodicTrigger trigger = new PeriodicTrigger(Duration.ofMillis(period));
@@ -82,7 +83,8 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedDelayWithInitialDelaySubsequentExecution() {
+	@SuppressWarnings("deprecation")
+	void fixedDelayWithInitialDelaySubsequentExecution() {
 		Instant now = Instant.now();
 		long period = 5000;
 		long initialDelay = 30000;
@@ -93,7 +95,7 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedDelayWithTimeUnitSubsequentExecution() {
+	void fixedDelayWithTimeUnitSubsequentExecution() {
 		Instant now = Instant.now();
 		long period = 5;
 		PeriodicTrigger trigger = new PeriodicTrigger(Duration.ofSeconds(period));
@@ -102,7 +104,7 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedRateFirstExecution() {
+	void fixedRateFirstExecution() {
 		Instant now = Instant.now();
 		PeriodicTrigger trigger = new PeriodicTrigger(Duration.ofMillis(5000));
 		trigger.setFixedRate(true);
@@ -111,7 +113,7 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedRateWithTimeUnitFirstExecution() {
+	void fixedRateWithTimeUnitFirstExecution() {
 		Instant now = Instant.now();
 		PeriodicTrigger trigger = new PeriodicTrigger(Duration.ofSeconds(5));
 		trigger.setFixedRate(true);
@@ -120,7 +122,8 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedRateWithInitialDelayFirstExecution() {
+	@SuppressWarnings("deprecation")
+	void fixedRateWithInitialDelayFirstExecution() {
 		Instant now = Instant.now();
 		long period = 5000;
 		long initialDelay = 30000;
@@ -132,7 +135,7 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedRateWithTimeUnitAndInitialDelayFirstExecution() {
+	void fixedRateWithTimeUnitAndInitialDelayFirstExecution() {
 		Instant now = Instant.now();
 		long period = 5;
 		long initialDelay = 30;
@@ -144,7 +147,7 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedRateSubsequentExecution() {
+	void fixedRateSubsequentExecution() {
 		Instant now = Instant.now();
 		long period = 5000;
 		PeriodicTrigger trigger = new PeriodicTrigger(Duration.ofMillis(period));
@@ -154,7 +157,8 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedRateWithInitialDelaySubsequentExecution() {
+	@SuppressWarnings("deprecation")
+	void fixedRateWithInitialDelaySubsequentExecution() {
 		Instant now = Instant.now();
 		long period = 5000;
 		long initialDelay = 30000;
@@ -166,7 +170,7 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void fixedRateWithTimeUnitSubsequentExecution() {
+	void fixedRateWithTimeUnitSubsequentExecution() {
 		Instant now = Instant.now();
 		long period = 5;
 		PeriodicTrigger trigger = new PeriodicTrigger(Duration.ofHours(period));
@@ -176,7 +180,8 @@ public class PeriodicTriggerTests {
 	}
 
 	@Test
-	public void equalsVerification() {
+	@SuppressWarnings("deprecation")
+	void equalsVerification() {
 		PeriodicTrigger trigger1 = new PeriodicTrigger(Duration.ofMillis(3000));
 		PeriodicTrigger trigger2 = new PeriodicTrigger(Duration.ofMillis(3000));
 		assertThat(trigger1.equals(new String("not a trigger"))).isFalse();

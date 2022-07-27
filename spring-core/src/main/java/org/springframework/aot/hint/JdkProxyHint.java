@@ -29,7 +29,6 @@ import org.springframework.lang.Nullable;
  *
  * @author Stephane Nicoll
  * @author Brian Clozel
- * @author Sam Brannen
  * @since 6.0
  */
 public final class JdkProxyHint implements ConditionalHint {
@@ -132,17 +131,6 @@ public final class JdkProxyHint implements ConditionalHint {
 		}
 
 		/**
-		 * Add the specified interfaces that the proxy should implement.
-		 * @param proxiedInterfaces the fully qualified class names of interfaces
-		 * the proxy should implement
-		 * @return {@code this}, to facilitate method chaining
-		 */
-		public Builder proxiedInterfaces(String... proxiedInterfaces) {
-			this.proxiedInterfaces.addAll(toTypeReferences(proxiedInterfaces));
-			return this;
-		}
-
-		/**
 		 * Make this hint conditional on the fact that the specified type
 		 * can be resolved.
 		 * @param reachableType the type that should be reachable for this
@@ -163,15 +151,13 @@ public final class JdkProxyHint implements ConditionalHint {
 		}
 
 		private static List<TypeReference> toTypeReferences(Class<?>... proxiedInterfaces) {
-			List<String> concreteTypes = Arrays.stream(proxiedInterfaces)
-					.filter(candidate -> !candidate.isInterface()).map(Class::getName).toList();
-			if (!concreteTypes.isEmpty()) {
-				throw new IllegalArgumentException("Not an interface: " + concreteTypes);
+			List<String> invalidTypes = Arrays.stream(proxiedInterfaces)
+					.filter(candidate -> !candidate.isInterface() || candidate.isSealed())
+					.map(Class::getName)
+					.toList();
+			if (!invalidTypes.isEmpty()) {
+				throw new IllegalArgumentException("The following must be non-sealed interfaces: " + invalidTypes);
 			}
-			return Arrays.stream(proxiedInterfaces).map(TypeReference::of).toList();
-		}
-
-		private static List<TypeReference> toTypeReferences(String... proxiedInterfaces) {
 			return Arrays.stream(proxiedInterfaces).map(TypeReference::of).toList();
 		}
 
