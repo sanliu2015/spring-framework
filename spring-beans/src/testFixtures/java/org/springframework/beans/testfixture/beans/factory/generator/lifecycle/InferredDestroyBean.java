@@ -14,27 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.util.concurrent;
+package org.springframework.beans.testfixture.beans.factory.generator.lifecycle;
 
-import java.util.function.BiConsumer;
+public class InferredDestroyBean {
 
-/**
- * Failure callback for a {@link ListenableFuture}.
- *
- * @author Sebastien Deleuze
- * @since 4.1
- * @deprecated as of 6.0, in favor of
- * {@link java.util.concurrent.CompletableFuture#whenComplete(BiConsumer)}
- */
-@Deprecated
-@FunctionalInterface
-public interface FailureCallback {
+	public void close() {
 
-	/**
-	 * Called when the {@link ListenableFuture} completes with failure.
-	 * <p>Note that Exceptions raised by this method are ignored.
-	 * @param ex the failure
-	 */
-	void onFailure(Throwable ex);
-
+	}
 }
+
+

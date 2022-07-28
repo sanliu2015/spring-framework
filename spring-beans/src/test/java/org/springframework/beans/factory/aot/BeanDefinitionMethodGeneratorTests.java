@@ -75,7 +75,7 @@ class BeanDefinitionMethodGeneratorTests {
 		this.generationContext = new TestGenerationContext();
 		this.beanFactory = new DefaultListableBeanFactory();
 		this.methodGeneratorFactory = new BeanDefinitionMethodGeneratorFactory(
-				new AotFactoriesLoader(this.beanFactory, new MockSpringFactoriesLoader()));
+				AotServices.factoriesAndBeans( new MockSpringFactoriesLoader(), beanFactory));
 		this.beanRegistrationsCode = new MockBeanRegistrationsCode(this.generationContext);
 	}
 
@@ -226,6 +226,23 @@ class BeanDefinitionMethodGeneratorTests {
 			}
 
 		};
+	}
+
+	@Test
+	void generateBeanDefinitionMethodDoesNotGenerateAttributesByDefault() {
+		RootBeanDefinition beanDefinition = new RootBeanDefinition(TestBean.class);
+		beanDefinition.setAttribute("a", "A");
+		beanDefinition.setAttribute("b", "B");
+		RegisteredBean registeredBean = registerBean(beanDefinition);
+		BeanDefinitionMethodGenerator generator = new BeanDefinitionMethodGenerator(
+				this.methodGeneratorFactory, registeredBean, null,
+				Collections.emptyList());
+		MethodReference method = generator.generateBeanDefinitionMethod(
+				this.generationContext, this.beanRegistrationsCode);
+		compile(method, (actual, compiled) -> {
+			assertThat(actual.hasAttribute("a")).isFalse();
+			assertThat(actual.hasAttribute("b")).isFalse();
+		});
 	}
 
 	@Test
