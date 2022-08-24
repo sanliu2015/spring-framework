@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigUtils;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -29,6 +30,7 @@ import org.springframework.core.io.FileSystemResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.MergedContextConfiguration;
+import org.springframework.test.context.aot.AotContextLoader;
 import org.springframework.test.context.support.AbstractContextLoader;
 import org.springframework.util.Assert;
 import org.springframework.web.context.WebApplicationContext;
@@ -57,9 +59,58 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
  * @see #loadContext(MergedContextConfiguration)
  * @see #loadContext(String...)
  */
-public abstract class AbstractGenericWebContextLoader extends AbstractContextLoader {
+public abstract class AbstractGenericWebContextLoader extends AbstractContextLoader implements AotContextLoader {
 
 	protected static final Log logger = LogFactory.getLog(AbstractGenericWebContextLoader.class);
+
+
+	// AotContextLoader
+
+	/**
+	 * Load a {@link GenericWebApplicationContext} for the supplied
+	 * {@link MergedContextConfiguration}.
+	 * <p>In contrast to {@link #loadContext(MergedContextConfiguration)}, this
+	 * method does not
+	 * {@linkplain org.springframework.context.ConfigurableApplicationContext#refresh()
+	 * refresh} the {@code ApplicationContext} or
+	 * {@linkplain org.springframework.context.ConfigurableApplicationContext#registerShutdownHook()
+	 * register a JVM shutdown hook} for it. Otherwise, this method implements
+	 * behavior identical to {@link #loadContext(MergedContextConfiguration)}.
+	 * @param mergedConfig the merged context configuration to use to load the
+	 * application context
+	 * @return a new web application context
+	 * @since 6.0
+	 * @see org.springframework.test.context.aot.AotContextLoader#loadContextForAotProcessing(MergedContextConfiguration)
+	 * @see GenericWebApplicationContext
+	 */
+	@Override
+	public final ApplicationContext loadContextForAotProcessing(
+			MergedContextConfiguration mergedConfig) throws Exception {
+
+		return loadContext(mergedConfig, false);
+	}
+
+	@Override
+	public final ApplicationContext loadContextForAotRuntime(MergedContextConfiguration mergedConfig,
+			ApplicationContextInitializer<ConfigurableApplicationContext> initializer) throws Exception {
+
+		if (!(mergedConfig instanceof WebMergedContextConfiguration webMergedConfig)) {
+			throw new IllegalArgumentException("""
+					Cannot load WebApplicationContext from non-web merged context configuration %s. \
+					Consider annotating your test class with @WebAppConfiguration."""
+						.formatted(mergedConfig));
+		}
+
+		validateMergedContextConfiguration(webMergedConfig);
+
+		GenericWebApplicationContext context = createContext();
+		configureWebResources(context, webMergedConfig);
+		prepareContext(context, webMergedConfig);
+		initializer.initialize(context);
+		customizeContext(context, webMergedConfig);
+		context.refresh();
+		return context;
+	}
 
 
 	// SmartContextLoader
@@ -108,30 +159,6 @@ public abstract class AbstractGenericWebContextLoader extends AbstractContextLoa
 	/**
 	 * Load a {@link GenericWebApplicationContext} for the supplied
 	 * {@link MergedContextConfiguration}.
-	 * <p>In contrast to {@link #loadContext(MergedContextConfiguration)}, this
-	 * method does not
-	 * {@linkplain org.springframework.context.ConfigurableApplicationContext#refresh()
-	 * refresh} the {@code ApplicationContext} or
-	 * {@linkplain org.springframework.context.ConfigurableApplicationContext#registerShutdownHook()
-	 * register a JVM shutdown hook} for it. Otherwise, this method implements
-	 * behavior identical to {@link #loadContext(MergedContextConfiguration)}.
-	 * @param mergedConfig the merged context configuration to use to load the
-	 * application context
-	 * @return a new web application context
-	 * @since 6.0
-	 * @see org.springframework.test.context.SmartContextLoader#loadContextForAotProcessing(MergedContextConfiguration)
-	 * @see GenericWebApplicationContext
-	 */
-	@Override
-	public final ApplicationContext loadContextForAotProcessing(
-			MergedContextConfiguration mergedConfig) throws Exception {
-
-		return loadContext(mergedConfig, false);
-	}
-
-	/**
-	 * Load a {@link GenericWebApplicationContext} for the supplied
-	 * {@link MergedContextConfiguration}.
 	 * @param mergedConfig the merged context configuration to use to load the
 	 * application context
 	 * @param refresh whether to refresh the {@code ApplicationContext} and register
@@ -157,7 +184,7 @@ public abstract class AbstractGenericWebContextLoader extends AbstractContextLoa
 
 		validateMergedContextConfiguration(webMergedConfig);
 
-		GenericWebApplicationContext context = new GenericWebApplicationContext();
+		GenericWebApplicationContext context = createContext();
 
 		ApplicationContext parent = mergedConfig.getParentApplicationContext();
 		if (parent != null) {
@@ -190,6 +217,21 @@ public abstract class AbstractGenericWebContextLoader extends AbstractContextLoa
 	 */
 	protected void validateMergedContextConfiguration(WebMergedContextConfiguration mergedConfig) {
 		// no-op
+	}
+
+	/**
+	 * Factory method for creating the {@link GenericWebApplicationContext} used
+	 * by this {@code ContextLoader}.
+	 * <p>The default implementation creates a {@code GenericWebApplicationContext}
+	 * using the default constructor. This method may be overridden &mdash; for
+	 * example, to use a custom context subclass or to create a
+	 * {@code GenericWebApplicationContext} with a custom
+	 * {@link DefaultListableBeanFactory} implementation.
+	 * @return a newly instantiated {@code GenericWebApplicationContext}
+	 * @since 5.2.23
+	 */
+	protected GenericWebApplicationContext createContext() {
+		return new GenericWebApplicationContext();
 	}
 
 	/**
