@@ -70,8 +70,7 @@ class TestAotProcessorTests extends AbstractAotTests {
 
 		assertThat(findFiles(resourceOutput)).contains(
 				"META-INF/native-image/org.example/app-tests/reflect-config.json",
-				"META-INF/native-image/org.example/app-tests/resource-config.json",
-				"META-INF/native-image/org.example/app-tests/proxy-config.json");
+				"META-INF/native-image/org.example/app-tests/resource-config.json");
 	}
 
 	private void copy(Class<?> testClass, Path destination) {
@@ -93,6 +92,7 @@ class TestAotProcessorTests extends AbstractAotTests {
 				.map(Path::toAbsolutePath)
 				.map(Path::toString)
 				.map(path -> path.substring(prefixLength))
+				.map(path -> path.replace('\\', '/')) // convert Windows path
 				.toList();
 	}
 

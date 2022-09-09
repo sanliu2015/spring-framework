@@ -31,7 +31,6 @@ import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.TypeReference;
 import org.springframework.aot.hint.predicate.RuntimeHintsPredicates;
 import org.springframework.core.annotation.AliasFor;
-import org.springframework.core.annotation.SynthesizedAnnotation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -85,21 +84,6 @@ class ReflectiveRuntimeHintsRegistrarTests {
 		assertThat(this.runtimeHints.reflection().getTypeHint(SampleMethodAnnotatedBean.class))
 				.satisfies(typeHint -> assertThat(typeHint.methods()).singleElement()
 						.satisfies(methodHint -> assertThat(methodHint.getName()).isEqualTo("managed")));
-	}
-
-	@Test
-	void shouldNotRegisterAnnotationProxyIfNotNeeded() {
-		process(SampleMethodMetaAnnotatedBean.class);
-		RuntimeHints runtimeHints = this.runtimeHints;
-		assertThat(runtimeHints.proxies().jdkProxies()).isEmpty();
-	}
-
-	@Test
-	void shouldRegisterAnnotationProxy() {
-		process(SampleMethodMetaAnnotatedBeanWithAlias.class);
-		RuntimeHints runtimeHints = this.runtimeHints;
-		assertThat(RuntimeHintsPredicates.proxies().forInterfaces(
-				SampleInvoker.class, SynthesizedAnnotation.class)).accepts(runtimeHints);
 	}
 
 	@Test
@@ -279,8 +263,7 @@ class ReflectiveRuntimeHintsRegistrarTests {
 		@Override
 		protected void registerMethodHint(ReflectionHints hints, Method method) {
 			super.registerMethodHint(hints, method);
-			hints.registerType(method.getReturnType(), type ->
-					type.withMembers(MemberCategory.INVOKE_DECLARED_METHODS));
+			hints.registerType(method.getReturnType(), MemberCategory.INVOKE_DECLARED_METHODS);
 		}
 
 	}
