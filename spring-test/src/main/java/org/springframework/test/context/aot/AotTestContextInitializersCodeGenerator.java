@@ -41,14 +41,14 @@ import org.springframework.javapoet.WildcardTypeName;
 import org.springframework.util.MultiValueMap;
 
 /**
- * Internal code generator for mappings used by {@link TestAotMappings}.
+ * Internal code generator for mappings used by {@link AotTestContextInitializers}.
  *
  * @author Sam Brannen
  * @since 6.0
  */
-class TestAotMappingsCodeGenerator {
+class AotTestContextInitializersCodeGenerator {
 
-	private static final Log logger = LogFactory.getLog(TestAotMappingsCodeGenerator.class);
+	private static final Log logger = LogFactory.getLog(AotTestContextInitializersCodeGenerator.class);
 
 	private static final ParameterizedTypeName CONTEXT_INITIALIZER = ParameterizedTypeName.get(
 			ClassName.get(ApplicationContextInitializer.class),
@@ -61,17 +61,26 @@ class TestAotMappingsCodeGenerator {
 	private static final TypeName CONTEXT_SUPPLIER_MAP = ParameterizedTypeName
 			.get(ClassName.get(Map.class), ClassName.get(String.class), CONTEXT_INITIALIZER_SUPPLIER);
 
+	private static final String GENERATED_SUFFIX = "Generated";
+
+	// TODO Add support in ClassNameGenerator for supplying a predefined class name.
+	// There is a similar issue in Spring Boot where code relies on a generated name.
+	// Ideally we would generate a class named: org.springframework.test.context.aot.GeneratedAotTestContextInitializers
+	static final String GENERATED_MAPPINGS_CLASS_NAME = AotTestContextInitializers.class.getName() + "__" + GENERATED_SUFFIX;
+
+	static final String GENERATED_MAPPINGS_METHOD_NAME = "getContextInitializers";
+
 
 	private final MultiValueMap<ClassName, Class<?>> initializerClassMappings;
 
 	private final GeneratedClass generatedClass;
 
 
-	TestAotMappingsCodeGenerator(MultiValueMap<ClassName, Class<?>> initializerClassMappings,
+	AotTestContextInitializersCodeGenerator(MultiValueMap<ClassName, Class<?>> initializerClassMappings,
 			GeneratedClasses generatedClasses) {
 
 		this.initializerClassMappings = initializerClassMappings;
-		this.generatedClass = generatedClasses.addForFeature("Generated", this::generateType);
+		this.generatedClass = generatedClasses.addForFeature(GENERATED_SUFFIX, this::generateType);
 	}
 
 
@@ -82,13 +91,13 @@ class TestAotMappingsCodeGenerator {
 	private void generateType(TypeSpec.Builder type) {
 		logger.debug(LogMessage.format("Generating AOT test mappings in %s",
 				this.generatedClass.getName().reflectionName()));
-		type.addJavadoc("Generated mappings for {@link $T}.", TestAotMappings.class);
+		type.addJavadoc("Generated mappings for {@link $T}.", AotTestContextInitializers.class);
 		type.addModifiers(Modifier.PUBLIC);
 		type.addMethod(generateMappingMethod());
 	}
 
 	private MethodSpec generateMappingMethod() {
-		MethodSpec.Builder method = MethodSpec.methodBuilder(TestAotMappings.GENERATED_MAPPINGS_METHOD_NAME);
+		MethodSpec.Builder method = MethodSpec.methodBuilder(GENERATED_MAPPINGS_METHOD_NAME);
 		method.addModifiers(Modifier.PUBLIC, Modifier.STATIC);
 		method.returns(CONTEXT_SUPPLIER_MAP);
 		method.addCode(generateMappingCode());

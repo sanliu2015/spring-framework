@@ -34,7 +34,6 @@ import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
  * Tests for {@link Compiled}.
  *
  * @author Phillip Webb
- * @since 6.0
  */
 class CompiledTests {
 
@@ -107,15 +106,13 @@ class CompiledTests {
 				ResourceFile.of("META-INF/myfile1", "test1"),
 				ResourceFile.of("META-INF/myfile2", "test2"));
 		TestCompiler.forSystem().withResources(resourceFiles).compile(
-				compiled -> assertThatIllegalStateException().isThrownBy(
-						() -> compiled.getResourceFile()));
+				compiled -> assertThatIllegalStateException().isThrownBy(compiled::getResourceFile));
 	}
 
 	@Test
 	void getResourceFileWhenNoneThrowsException() {
 		TestCompiler.forSystem().compile(
-				compiled -> assertThatIllegalStateException().isThrownBy(
-						() -> compiled.getResourceFile()));
+				compiled -> assertThatIllegalStateException().isThrownBy(compiled::getResourceFile));
 	}
 
 	@Test

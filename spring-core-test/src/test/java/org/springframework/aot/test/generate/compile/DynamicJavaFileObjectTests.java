@@ -26,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for {@link DynamicJavaFileObject}.
  *
  * @author Phillip Webb
- * @since 6.0
  */
 class DynamicJavaFileObjectTests {
 
@@ -39,7 +38,7 @@ class DynamicJavaFileObjectTests {
 	}
 
 	@Test
-	void getCharContentReturnsContent() throws Exception {
+	void getCharContentReturnsContent() {
 		DynamicJavaFileObject fileObject = new DynamicJavaFileObject(SourceFile.of(CONTENT));
 		assertThat(fileObject.getCharContent(true)).isEqualTo(CONTENT);
 	}

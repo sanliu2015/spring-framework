@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
-import io.netty5.buffer.api.BufferAllocator;
 import io.netty5.handler.codec.http.cookie.Cookie;
 import io.netty5.handler.codec.http.cookie.DefaultCookie;
 import org.apache.commons.logging.Log;
@@ -37,7 +36,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseCookie;
 import org.springframework.lang.Nullable;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -53,11 +51,6 @@ import org.springframework.util.ObjectUtils;
  * @see reactor.netty5.http.client.HttpClient
  */
 class ReactorNetty2ClientHttpResponse implements ClientHttpResponse {
-
-	/** Reactor Netty 1.0.5+. */
-	static final boolean reactorNettyRequestChannelOperationsIdPresent = ClassUtils.isPresent(
-			"reactor.netty5.ChannelOperationsId", ReactorNetty2ClientHttpResponse.class.getClassLoader());
-
 
 	private static final Log logger = LogFactory.getLog(ReactorNetty2ClientHttpResponse.class);
 
@@ -86,26 +79,10 @@ class ReactorNetty2ClientHttpResponse implements ClientHttpResponse {
 		this.bufferFactory = new Netty5DataBufferFactory(connection.outbound().alloc());
 	}
 
-	/**
-	 * Constructor with inputs extracted from a {@link Connection}.
-	 * @deprecated as of 5.2.8, in favor of {@link #ReactorNetty2ClientHttpResponse(HttpClientResponse, Connection)}
-	 */
-	@Deprecated
-	public ReactorNetty2ClientHttpResponse(HttpClientResponse response, NettyInbound inbound, BufferAllocator alloc) {
-		this.response = response;
-		MultiValueMap<String, String> adapter = new Netty5HeadersAdapter(response.responseHeaders());
-		this.headers = HttpHeaders.readOnlyHttpHeaders(adapter);
-		this.inbound = inbound;
-		this.bufferFactory = new Netty5DataBufferFactory(alloc);
-	}
-
 
 	@Override
 	public String getId() {
-		String id = null;
-		if (reactorNettyRequestChannelOperationsIdPresent) {
-			id = ChannelOperationsIdHelper.getId(this.response);
-		}
+		String id = ChannelOperationsIdHelper.getId(this.response);
 		if (id == null && this.response instanceof Connection connection) {
 			id = connection.channel().id().asShortText();
 		}

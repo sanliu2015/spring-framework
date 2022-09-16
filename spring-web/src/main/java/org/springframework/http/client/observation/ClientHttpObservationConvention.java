@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package org.springframework.aot.hint;
+package org.springframework.http.client.observation;
 
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationConvention;
 
 /**
- * Tests for {@link FieldHint}.
- *
- * @author Phillip Webb
+ * Interface for an {@link ObservationConvention} related to RestTemplate HTTP exchanges.
+ * @author Brian Clozel
+ * @since 6.0
  */
-class FieldHintTests {
+public interface ClientHttpObservationConvention extends ObservationConvention<ClientHttpObservationContext> {
 
-	@Test
-	void builtWithAppliesMode() {
-		FieldHint.Builder builder = new FieldHint.Builder("test");
-		assertThat(builder.build().getMode()).isEqualTo(FieldMode.WRITE);
-		FieldHint.builtWith(FieldMode.READ).accept(builder);
-		assertThat(builder.build().getMode()).isEqualTo(FieldMode.READ);
+	@Override
+	default boolean supportsContext(Observation.Context context) {
+		return context instanceof ClientHttpObservationContext;
 	}
 
 }

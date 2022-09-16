@@ -24,7 +24,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.assertj.core.api.Assertions.assertThatObject;
 
-class ReResourceFilesTests {
+/**
+ * Tests for {@link ResourceFilesTests}.
+ *
+ * @author Phillip Webb
+ */
+class ResourceFilesTests {
 
 	private static final ResourceFile RESOURCE_FILE_1 = ResourceFile.of("path1",
 			"resource1");
@@ -110,7 +115,7 @@ class ReResourceFilesTests {
 	@Test
 	void getSingleWhenHasMultipleFilesThrowsException() {
 		ResourceFiles resourceFiles = ResourceFiles.of(RESOURCE_FILE_1, RESOURCE_FILE_2);
-		assertThatIllegalStateException().isThrownBy(() -> resourceFiles.getSingle());
+		assertThatIllegalStateException().isThrownBy(resourceFiles::getSingle);
 	}
 
 	@Test
