@@ -48,6 +48,7 @@ import java.util.zip.ZipException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.core.NativeDetector;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -191,6 +192,7 @@ import org.springframework.util.StringUtils;
  * @author Costin Leau
  * @author Phillip Webb
  * @author Sam Brannen
+ * @author Sebastien Deleuze
  * @since 1.0.2
  * @see #CLASSPATH_ALL_URL_PREFIX
  * @see org.springframework.util.AntPathMatcher
@@ -206,8 +208,10 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	 * @since 6.0
 	 * @see #isNotSystemModule
 	 */
-	private static final Set<String> systemModuleNames = ModuleFinder.ofSystem().findAll().stream()
-			.map(moduleReference -> moduleReference.descriptor().name()).collect(Collectors.toSet());
+	private static final Set<String> systemModuleNames = NativeDetector.inNativeImage() ? Collections.emptySet() :
+			ModuleFinder.ofSystem().findAll().stream()
+					.map(moduleReference -> moduleReference.descriptor().name())
+					.collect(Collectors.toSet());
 
 	/**
 	 * {@link Predicate} that tests whether the supplied {@link ResolvedModule}
@@ -888,6 +892,12 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	 */
 	protected Set<Resource> findAllModulePathResources(String locationPattern) throws IOException {
 		Set<Resource> result = new LinkedHashSet<>(16);
+
+		// Skip scanning the module path when running in a native image.
+		if (NativeDetector.inNativeImage()) {
+			return result;
+		}
+
 		String resourcePattern = stripLeadingSlash(locationPattern);
 		Predicate<String> resourcePatternMatches = (getPathMatcher().isPattern(resourcePattern) ?
 				path -> getPathMatcher().match(resourcePattern, path) :
