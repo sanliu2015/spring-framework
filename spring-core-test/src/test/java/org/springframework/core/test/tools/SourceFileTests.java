@@ -119,6 +119,46 @@ class SourceFileTests {
 		assertThat(sourceFile.getContent()).isEqualTo(HELLO_WORLD);
 	}
 
+	@Test
+	void getClassNameFromSimpleRecord() {
+		SourceFile sourceFile = SourceFile.of("""
+				package com.example.helloworld;
+
+				record HelloWorld(String name) {
+				}
+				""");
+		assertThat(sourceFile.getClassName()).isEqualTo("com.example.helloworld.HelloWorld");
+	}
+
+	@Test
+	void getClassNameFromMoreComplexRecord() {
+		SourceFile sourceFile = SourceFile.of("""
+				package com.example.helloworld;
+
+				public record HelloWorld(String name) {
+
+					String getFoo() {
+						return name();
+					}
+
+				}
+				""");
+		assertThat(sourceFile.getClassName()).isEqualTo("com.example.helloworld.HelloWorld");
+	}
+
+	@Test
+	void getClassNameFromAnnotatedRecord() {
+		SourceFile sourceFile = SourceFile.of("""
+			package com.example;
+
+			public record RecordProperties(
+					@org.springframework.lang.NonNull("test") String property1,
+					@org.springframework.lang.NonNull("test") String property2) {
+			}
+		""");
+		assertThat(sourceFile.getClassName()).isEqualTo("com.example.RecordProperties");
+	}
+
 	/**
 	 * JavaPoet style API with a {@code writeTo} method.
 	 */

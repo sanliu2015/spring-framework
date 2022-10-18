@@ -18,6 +18,7 @@ package org.springframework.context.generator;
 
 import java.util.function.BiConsumer;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.aot.hint.RuntimeHints;
@@ -31,9 +32,9 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.aot.ApplicationContextAotGenerator;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.context.testfixture.context.annotation.AutowiredComponent;
+import org.springframework.context.testfixture.context.annotation.InitDestroyComponent;
 import org.springframework.context.testfixture.context.generator.SimpleComponent;
-import org.springframework.context.testfixture.context.generator.annotation.AutowiredComponent;
-import org.springframework.context.testfixture.context.generator.annotation.InitDestroyComponent;
 import org.springframework.core.test.tools.TestCompiler;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,6 +72,7 @@ class ApplicationContextAotGeneratorRuntimeHintsTests {
 	}
 
 	@Test
+	@Disabled("until gh-29246 is re-applied")
 	void generateApplicationContextWithMultipleInitDestroyMethods() {
 		GenericApplicationContext context = new AnnotationConfigApplicationContext();
 		RootBeanDefinition beanDefinition = new RootBeanDefinition(InitDestroyComponent.class);

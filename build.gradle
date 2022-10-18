@@ -10,9 +10,9 @@ buildscript {
 plugins {
 	id 'io.spring.nohttp' version '0.0.10'
 	id 'io.freefair.aspectj' version '6.5.0.3' apply false
-	id 'org.jetbrains.dokka' version '1.7.10' apply false
-	id 'org.jetbrains.kotlin.jvm' version '1.7.10' apply false
-	id 'org.jetbrains.kotlin.plugin.serialization' version '1.7.10' apply false
+	id 'org.jetbrains.dokka' version '1.7.20' apply false
+	id 'org.jetbrains.kotlin.jvm' version '1.7.20' apply false
+	id 'org.jetbrains.kotlin.plugin.serialization' version '1.7.20' apply false
 	id 'org.asciidoctor.jvm.convert' version '3.3.2'
 	id 'org.asciidoctor.jvm.pdf' version '3.3.2'
 	id 'org.unbroken-dome.xjc' version '2.0.0' apply false
@@ -55,7 +55,7 @@ configure([rootProject] + javaProjects) { project ->
 	apply plugin: "java"
 	apply plugin: "java-test-fixtures"
 	apply plugin: "checkstyle"
-	apply plugin: 'org.springframework.build.compile'
+	apply plugin: 'org.springframework.build.conventions'
 	apply from: "${rootDir}/gradle/toolchains.gradle"
 	apply from: "${rootDir}/gradle/ide.gradle"
 
@@ -93,11 +93,21 @@ configure([rootProject] + javaProjects) { project ->
 		systemProperty("java.awt.headless", "true")
 		systemProperty("testGroups", project.properties.get("testGroups"))
 		systemProperty("io.netty.leakDetection.level", "paranoid")
+		jvmArgs(["--add-opens=java.base/java.lang=ALL-UNNAMED",
+				 "--add-opens=java.base/java.util=ALL-UNNAMED"])
 	}
 
 	checkstyle {
 		toolVersion = "10.3.3"
 		configDirectory.set(rootProject.file("src/checkstyle"))
+	}
+
+	tasks.named("checkstyleMain").configure {
+		maxHeapSize = "1g"
+	}
+
+	tasks.named("checkstyleTest").configure {
+		maxHeapSize = "1g"
 	}
 
 	dependencies {
@@ -181,6 +191,10 @@ configure(rootProject) {
 				.collect { rootPath.relativize(new File(dir, it).toPath()) }
 				.forEach { source.exclude "$it" }
 		}
+	}
+
+	tasks.named("checkstyleNohttp").configure {
+		maxHeapSize = "1g"
 	}
 
 	publishing {

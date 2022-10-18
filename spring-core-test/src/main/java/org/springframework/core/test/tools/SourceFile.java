@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.thoughtworks.qdox.JavaProjectBuilder;
 import com.thoughtworks.qdox.model.JavaClass;
@@ -171,6 +173,11 @@ public final class SourceFile extends DynamicFile implements AssertProvider<Sour
 		JavaProjectBuilder builder = new JavaProjectBuilder();
 		try {
 			JavaSource javaSource = builder.addSource(new StringReader(content));
+			if (javaSource.getClasses().isEmpty()) {
+				// QDOX doesn't let us inspect records yet, but we only need the
+				// class name so lets make the content look like a class
+				javaSource = builder.addSource(new StringReader(makeRecordsLookLikeClasses(content)));
+			}
 			Assert.state(javaSource.getClasses().size() == 1, "Source must define a single class");
 			JavaClass javaClass = javaSource.getClasses().get(0);
 			return (javaSource.getPackage() != null)
@@ -181,6 +188,33 @@ public final class SourceFile extends DynamicFile implements AssertProvider<Sour
 			throw new IllegalStateException(
 					"Unable to parse source file content:\n\n" + content, ex);
 		}
+	}
+
+	private static String makeRecordsLookLikeClasses(String content) {
+		Pattern pattern = Pattern.compile("record\\s(\\S+)\\(");
+		Matcher matcher = pattern.matcher(content);
+		if (matcher.find()) {
+			StringBuilder result = new StringBuilder();
+			result.append(content.substring(0, matcher.start()) + "class");
+			result.append(content.substring(matcher.start() + 6, matcher.end() - 1));
+			int parenthesesCount = 1;
+			for (int i = matcher.end(); i < content.length(); i++) {
+				char ch = content.charAt(i);
+				if (parenthesesCount > 0) {
+					if (ch == '(') {
+						parenthesesCount++;
+					}
+					else if (ch == ')') {
+						parenthesesCount--;
+					}
+				}
+				else {
+					result.append(ch);
+				}
+			}
+			return makeRecordsLookLikeClasses(result.toString());
+		}
+		return content;
 	}
 
 	/**

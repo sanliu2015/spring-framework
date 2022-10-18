@@ -76,11 +76,11 @@ class BeanDefinitionMethodGenerator {
 
 		this.methodGeneratorFactory = methodGeneratorFactory;
 		this.registeredBean = registeredBean;
-		this.constructorOrFactoryMethod = ConstructorOrFactoryMethodResolver
-				.resolve(registeredBean);
+		this.constructorOrFactoryMethod = registeredBean.resolveConstructorOrFactoryMethod();
 		this.innerBeanPropertyName = innerBeanPropertyName;
 		this.aotContributions = aotContributions;
 	}
+
 
 	/**
 	 * Generate the method that returns the {@link BeanDefinition} to be
@@ -95,23 +95,28 @@ class BeanDefinitionMethodGenerator {
 		registerRuntimeHintsIfNecessary(generationContext.getRuntimeHints());
 		BeanRegistrationCodeFragments codeFragments = getCodeFragments(generationContext,
 				beanRegistrationsCode);
-		ClassName target = codeFragments.getTarget(this.registeredBean,
-				this.constructorOrFactoryMethod);
-		if (!target.canonicalName().startsWith("java.")) {
+		ClassName target = codeFragments.getTarget(this.registeredBean, this.constructorOrFactoryMethod);
+		if (isWritablePackageName(target)) {
 			GeneratedClass generatedClass = lookupGeneratedClass(generationContext, target);
-			GeneratedMethods generatedMethods = generatedClass.getMethods()
-					.withPrefix(getName());
-			GeneratedMethod generatedMethod = generateBeanDefinitionMethod(
-					generationContext, generatedClass.getName(), generatedMethods,
-					codeFragments, Modifier.PUBLIC);
+			GeneratedMethods generatedMethods = generatedClass.getMethods().withPrefix(getName());
+			GeneratedMethod generatedMethod = generateBeanDefinitionMethod(generationContext,
+					generatedClass.getName(), generatedMethods, codeFragments, Modifier.PUBLIC);
 			return generatedMethod.toMethodReference();
 		}
-		GeneratedMethods generatedMethods = beanRegistrationsCode.getMethods()
-				.withPrefix(getName());
+		GeneratedMethods generatedMethods = beanRegistrationsCode.getMethods().withPrefix(getName());
 		GeneratedMethod generatedMethod = generateBeanDefinitionMethod(generationContext,
-				beanRegistrationsCode.getClassName(), generatedMethods, codeFragments,
-				Modifier.PRIVATE);
+				beanRegistrationsCode.getClassName(), generatedMethods, codeFragments, Modifier.PRIVATE);
 		return generatedMethod.toMethodReference();
+	}
+
+	/**
+	 * Specify if the {@link ClassName} belongs to a writable package.
+	 * @param target the target to check
+	 * @return {@code true} if generated code in that package is allowed
+	 */
+	private boolean isWritablePackageName(ClassName target) {
+		String packageName = target.packageName();
+		return (!packageName.startsWith("java.") && !packageName.startsWith("javax."));
 	}
 
 	/**
@@ -219,6 +224,7 @@ class BeanDefinitionMethodGenerator {
 		}
 	}
 
+
 	private static class ProxyRuntimeHintsRegistrar {
 
 		private final AutowireCandidateResolver candidateResolver;
@@ -231,8 +237,7 @@ class BeanDefinitionMethodGenerator {
 			Class<?>[] parameterTypes = method.getParameterTypes();
 			for (int i = 0; i < parameterTypes.length; i++) {
 				MethodParameter methodParam = new MethodParameter(method, i);
-				DependencyDescriptor dependencyDescriptor = new DependencyDescriptor(
-						methodParam, true);
+				DependencyDescriptor dependencyDescriptor = new DependencyDescriptor(methodParam, true);
 				registerProxyIfNecessary(runtimeHints, dependencyDescriptor);
 			}
 		}
@@ -248,13 +253,11 @@ class BeanDefinitionMethodGenerator {
 		}
 
 		private void registerProxyIfNecessary(RuntimeHints runtimeHints, DependencyDescriptor dependencyDescriptor) {
-			Class<?> proxyType = this.candidateResolver
-					.getLazyResolutionProxyClass(dependencyDescriptor, null);
+			Class<?> proxyType = this.candidateResolver.getLazyResolutionProxyClass(dependencyDescriptor, null);
 			if (proxyType != null && Proxy.isProxyClass(proxyType)) {
 				runtimeHints.proxies().registerJdkProxy(proxyType.getInterfaces());
 			}
 		}
-
 	}
 
 }

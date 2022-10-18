@@ -36,14 +36,17 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotContribution;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.support.RegisteredBean;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.testfixture.beans.factory.aot.MockBeanFactoryInitializationCode;
-import org.springframework.beans.testfixture.beans.factory.generator.SimpleConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.context.testfixture.context.generator.annotation.ImportAwareConfiguration;
-import org.springframework.context.testfixture.context.generator.annotation.ImportConfiguration;
+import org.springframework.context.testfixture.context.annotation.CglibConfiguration;
+import org.springframework.context.testfixture.context.annotation.ImportAwareConfiguration;
+import org.springframework.context.testfixture.context.annotation.ImportConfiguration;
+import org.springframework.context.testfixture.context.annotation.SimpleConfiguration;
+import org.springframework.context.testfixture.context.generator.SimpleComponent;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.ResourceLoader;
@@ -78,7 +81,7 @@ class ConfigurationClassPostProcessorAotContributionTests {
 
 		@Test
 		void processAheadOfTimeWhenNoImportAwareConfigurationReturnsNull() {
-			assertThat(getContribution(SimpleConfiguration.class)).isNull();
+			assertThat(getContribution(SimpleComponent.class)).isNull();
 		}
 
 		@Test
@@ -142,12 +145,11 @@ class ConfigurationClassPostProcessorAotContributionTests {
 		void applyToWhenHasImportAwareConfigurationRegistersHints() {
 			BeanFactoryInitializationAotContribution contribution = getContribution(ImportConfiguration.class);
 			contribution.applyTo(generationContext, beanFactoryInitializationCode);
-			assertThat(generationContext.getRuntimeHints().resources().resourcePatterns())
+			assertThat(generationContext.getRuntimeHints().resources().resourcePatternHints())
 					.singleElement()
 					.satisfies(resourceHint -> assertThat(resourceHint.getIncludes())
 							.map(ResourcePatternHint::getPattern)
-							.containsOnly("org/springframework/context/testfixture/context/generator/annotation/"
-									+ "ImportConfiguration.class"));
+							.containsOnly("org/springframework/context/testfixture/context/annotation/ImportConfiguration.class"));
 		}
 
 		@SuppressWarnings("unchecked")
@@ -319,6 +321,34 @@ class ConfigurationClassPostProcessorAotContributionTests {
 				ignoreResourceNotFound = true)
 		static class PropertySourceWithDetailsConfiguration {
 
+		}
+
+	}
+
+	@Nested
+	class ConfigurationClassProxyTests {
+
+		private final DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+
+		private final ConfigurationClassPostProcessor processor = new ConfigurationClassPostProcessor();
+
+		@Test
+		void processAheadOfTimeRegularConfigurationClass() {
+			assertThat(this.processor.processAheadOfTime(
+					getRegisteredBean(SimpleConfiguration.class))).isNull();
+		}
+
+		@Test
+		void processAheadOfTimeFullConfigurationClass() {
+			assertThat(this.processor.processAheadOfTime(
+					getRegisteredBean(CglibConfiguration.class))).isNotNull();
+		}
+
+
+		private RegisteredBean getRegisteredBean(Class<?> bean) {
+			this.beanFactory.registerBeanDefinition("test", new RootBeanDefinition(bean));
+			this.processor.postProcessBeanFactory(this.beanFactory);
+			return RegisteredBean.of(this.beanFactory, "test");
 		}
 
 	}

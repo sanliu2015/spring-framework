@@ -109,7 +109,7 @@ public class ReflectionHintsPredicates {
 	 */
 	public MethodHintPredicate onMethod(Class<?> type, String methodName) {
 		Assert.notNull(type, "'type' should not be null");
-		Assert.hasText(methodName, "'methodName' should not be null");
+		Assert.hasText(methodName, "'methodName' should not be empty");
 		return new MethodHintPredicate(getMethod(type, methodName));
 	}
 
@@ -125,8 +125,8 @@ public class ReflectionHintsPredicates {
 	 * @throws IllegalArgumentException if the method cannot be found or if multiple methods are found with the same name.
 	 */
 	public MethodHintPredicate onMethod(String className, String methodName) throws ClassNotFoundException {
-		Assert.notNull(className, "'className' should not be null");
-		Assert.hasText(methodName, "'methodName' should not be null");
+		Assert.hasText(className, "'className' should not be empty");
+		Assert.hasText(methodName, "'methodName' should not be empty");
 		return onMethod(Class.forName(className), methodName);
 	}
 
@@ -147,7 +147,7 @@ public class ReflectionHintsPredicates {
 	/**
 	 * Return a predicate that checks whether a reflection hint is registered for the field that matches the given selector.
 	 * This looks up a field on the given type with the expected name, if present.
-	 * By default, unsafe or write access are not considered.
+	 * By default, unsafe or write access is not considered.
 	 * <p>The returned type exposes additional methods that refine the predicate behavior.
 	 * @param type the type holding the field
 	 * @param fieldName the field name
@@ -167,7 +167,7 @@ public class ReflectionHintsPredicates {
 	/**
 	 * Return a predicate that checks whether a reflection hint is registered for the field that matches the given selector.
 	 * This looks up a field on the given type with the expected name, if present.
-	 * By default, unsafe or write access are not considered.
+	 * By default, unsafe or write access is not considered.
 	 * <p>The returned type exposes additional methods that refine the predicate behavior.
 	 * @param className the name of the class holding the field
 	 * @param fieldName the field name
@@ -176,14 +176,14 @@ public class ReflectionHintsPredicates {
 	 * @throws IllegalArgumentException if a field cannot be found with the given name.
 	 */
 	public FieldHintPredicate onField(String className, String fieldName) throws ClassNotFoundException {
-		Assert.notNull(className, "'className' should not be null");
+		Assert.hasText(className, "'className' should not be empty");
 		Assert.hasText(fieldName, "'fieldName' should not be empty");
 		return onField(Class.forName(className), fieldName);
 	}
 
 	/**
 	 * Return a predicate that checks whether a reflection hint is registered for the given field.
-	 * By default, unsafe or write access are not considered.
+	 * By default, unsafe or write access is not considered.
 	 * <p>The returned type exposes additional methods that refine the predicate behavior.
 	 * @param field the field
 	 * @return the {@link RuntimeHints} predicate
@@ -243,29 +243,6 @@ public class ReflectionHintsPredicates {
 					.anyMatch(memberCategory -> getTypeHint(hints).getMemberCategories().contains(memberCategory)));
 		}
 
-		/**
-		 * Refine the current predicate to only match if a hint is present for any of its constructors.
-		 * @return the refined {@link RuntimeHints} predicate
-		 */
-		public Predicate<RuntimeHints> withAnyConstructor() {
-			return this.and(hints -> getTypeHint(hints).constructors().findAny().isPresent());
-		}
-
-		/**
-		 * Refine the current predicate to only match if a hint is present for any of its methods.
-		 * @return the refined {@link RuntimeHints} predicate
-		 */
-		public Predicate<RuntimeHints> withAnyMethod() {
-			return this.and(hints -> getTypeHint(hints).methods().findAny().isPresent());
-		}
-
-		/**
-		 * Refine the current predicate to only match if a hint is present for any of its fields.
-		 * @return the refined {@link RuntimeHints} predicate
-		 */
-		public Predicate<RuntimeHints> withAnyField() {
-			return this.and(hints -> getTypeHint(hints).fields().findAny().isPresent());
-		}
 	}
 
 	public abstract static class ExecutableHintPredicate<T extends Executable> implements Predicate<RuntimeHints> {

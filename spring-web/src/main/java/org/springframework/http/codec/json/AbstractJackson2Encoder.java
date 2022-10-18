@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +61,7 @@ import org.springframework.util.MimeType;
 /**
  * Base class providing support methods for Jackson 2.9 encoding. For non-streaming use
  * cases, {@link Flux} elements are collected into a {@link List} before serialization for
- * performance reason.
+ * performance reasons.
  *
  * @author Sebastien Deleuze
  * @author Arjen Poutsma
@@ -195,9 +194,10 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 										delimiter, EMPTY_BYTES);
 
 								return (prefix.length > 0 ?
-										bufferFactory.join(Arrays.asList(bufferFactory.wrap(prefix), dataBuffer)) :
+										bufferFactory.join(List.of(bufferFactory.wrap(prefix), dataBuffer)) :
 										dataBuffer);
 							})
+							.switchIfEmpty(Mono.fromCallable(() -> bufferFactory.wrap(helper.getPrefix())))
 							.concatWith(Mono.fromCallable(() -> bufferFactory.wrap(helper.getSuffix())));
 				}
 
@@ -347,13 +347,13 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 	}
 
 	/**
-	 * Subclasses can use this method to customize {@link ObjectWriter} used
+	 * Subclasses can use this method to customize the {@link ObjectWriter} used
 	 * for writing values.
 	 * @param writer the writer instance to customize
 	 * @param mimeType the selected MIME type
 	 * @param elementType the type of element values to write
-	 * @param hints a map with serialization hints;
-	 * the Reactor Context, when available, may be accessed under the key
+	 * @param hints a map with serialization hints; the Reactor Context, when
+	 * available, may be accessed under the key
 	 * {@code ContextView.class.getName()}
 	 * @return the customized {@code ObjectWriter} to use
 	 */

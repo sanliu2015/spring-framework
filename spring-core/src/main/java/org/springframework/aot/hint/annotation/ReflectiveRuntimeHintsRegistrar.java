@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.springframework.aot.hint.ReflectionHints;
 import org.springframework.aot.hint.RuntimeHints;
@@ -34,12 +32,14 @@ import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
+import static org.springframework.core.annotation.MergedAnnotations.SearchStrategy.TYPE_HIERARCHY;
+
 /**
- * Process {@link Reflective} annotated elements.
+ * Process {@link Reflective @Reflective} annotated elements.
  *
  * @author Stephane Nicoll
  * @author Andy Wilkinson
- * since 6.0
+ * @since 6.0
  */
 public class ReflectiveRuntimeHintsRegistrar {
 
@@ -54,12 +54,12 @@ public class ReflectiveRuntimeHintsRegistrar {
 	 */
 	public void registerRuntimeHints(RuntimeHints runtimeHints, Class<?>... types) {
 		Set<Entry> entries = new HashSet<>();
-		Arrays.stream(types).forEach(type -> {
+		for (Class<?> type : types) {
 			processType(entries, type);
 			for (Class<?> implementedInterface : ClassUtils.getAllInterfacesForClass(type)) {
 				processType(entries, implementedInterface);
 			}
-		});
+		}
 		entries.forEach(entry -> {
 			AnnotatedElement element = entry.element();
 			entry.processor().registerReflectionHints(runtimeHints.reflection(), element);
@@ -87,20 +87,21 @@ public class ReflectiveRuntimeHintsRegistrar {
 	}
 
 	private boolean isReflective(AnnotatedElement element) {
-		return MergedAnnotations.from(element, MergedAnnotations.SearchStrategy.TYPE_HIERARCHY).isPresent(Reflective.class);
+		return MergedAnnotations.from(element, TYPE_HIERARCHY).isPresent(Reflective.class);
 	}
 
 	@SuppressWarnings("unchecked")
 	private Entry createEntry(AnnotatedElement element) {
-		List<Class<? extends ReflectiveProcessor>> processorClasses =
-				MergedAnnotations.from(element, MergedAnnotations.SearchStrategy.TYPE_HIERARCHY)
-						.stream(Reflective.class).flatMap(annotation -> Stream.of(annotation.getClassArray("value")))
-								.map(type -> (Class<? extends ReflectiveProcessor>) type).collect(Collectors.toList());
-		List<ReflectiveProcessor> processors = processorClasses.stream().distinct()
+		List<ReflectiveProcessor> processors = MergedAnnotations.from(element, TYPE_HIERARCHY)
+				.stream(Reflective.class)
+				.map(annotation -> annotation.getClassArray("value"))
+				.flatMap(Arrays::stream)
+				.map(type -> (Class<? extends ReflectiveProcessor>) type)
+				.distinct()
 				.map(processorClass -> this.processors.computeIfAbsent(processorClass, this::instantiateClass))
 				.toList();
 		ReflectiveProcessor processorToUse = (processors.size() == 1 ? processors.get(0)
-				: new DelegateReflectiveProcessor(processors));
+				: new DelegatingReflectiveProcessor(processors));
 		return new Entry(element, processorToUse);
 	}
 
@@ -115,11 +116,11 @@ public class ReflectiveRuntimeHintsRegistrar {
 		}
 	}
 
-	static class DelegateReflectiveProcessor implements ReflectiveProcessor {
+	private static class DelegatingReflectiveProcessor implements ReflectiveProcessor {
 
 		private final Iterable<ReflectiveProcessor> processors;
 
-		public DelegateReflectiveProcessor(Iterable<ReflectiveProcessor> processors) {
+		DelegatingReflectiveProcessor(Iterable<ReflectiveProcessor> processors) {
 			this.processors = processors;
 		}
 

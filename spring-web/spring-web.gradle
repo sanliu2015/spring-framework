@@ -28,7 +28,7 @@ dependencies {
 	optional("io.netty:netty5-handler")
 	optional("io.netty:netty5-codec-http")
 	optional("io.netty:netty5-transport")
-	optional("io.projectreactor.netty:reactor-netty5-http:2.0.0-M1")
+	optional("io.projectreactor.netty:reactor-netty5-http")
 	optional("io.undertow:undertow-core")
 	optional("org.apache.tomcat.embed:tomcat-embed-core")
 	optional("org.eclipse.jetty:jetty-server") {
@@ -54,7 +54,9 @@ dependencies {
 	optional("org.apache.groovy:groovy")
 	optional("org.jetbrains.kotlin:kotlin-reflect")
 	optional("org.jetbrains.kotlin:kotlin-stdlib")
+	optional("org.jetbrains.kotlinx:kotlinx-serialization-cbor")
 	optional("org.jetbrains.kotlinx:kotlinx-serialization-json")
+	optional("org.jetbrains.kotlinx:kotlinx-serialization-protobuf")
 	testImplementation(testFixtures(project(":spring-beans")))
 	testImplementation(testFixtures(project(":spring-context")))
 	testImplementation(testFixtures(project(":spring-core")))
