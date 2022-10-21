@@ -27,7 +27,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.observation.DefaultServerRequestObservationConvention;
 import org.springframework.http.observation.ServerHttpObservationDocumentation;
 import org.springframework.http.observation.ServerRequestObservationContext;
@@ -117,7 +116,6 @@ public class ServerHttpObservationFilter extends OncePerRequestFilter {
 			if (!request.isAsyncStarted()) {
 				Throwable error = fetchException(request);
 				if (error != null) {
-					response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
 					observation.error(error);
 				}
 				observation.stop();
@@ -132,7 +130,9 @@ public class ServerHttpObservationFilter extends OncePerRequestFilter {
 			observation = ServerHttpObservationDocumentation.HTTP_REQUESTS.observation(this.observationConvention,
 					DEFAULT_OBSERVATION_CONVENTION, () -> context, this.observationRegistry).start();
 			request.setAttribute(CURRENT_OBSERVATION_ATTRIBUTE, observation);
-			request.setAttribute(CURRENT_OBSERVATION_CONTEXT_ATTRIBUTE, observation.getContext());
+			if (!observation.isNoop()) {
+				request.setAttribute(CURRENT_OBSERVATION_CONTEXT_ATTRIBUTE, observation.getContext());
+			}
 		}
 		return observation;
 	}

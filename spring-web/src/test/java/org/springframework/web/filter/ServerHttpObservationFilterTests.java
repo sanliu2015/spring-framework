@@ -16,6 +16,7 @@
 
 package org.springframework.web.filter;
 
+import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.observation.tck.TestObservationRegistry;
 import io.micrometer.observation.tck.TestObservationRegistryAssert;
 import jakarta.servlet.RequestDispatcher;
@@ -33,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link ServerHttpObservationFilter}.
+ *
  * @author Brian Clozel
  */
 class ServerHttpObservationFilterTests {
@@ -62,6 +64,16 @@ class ServerHttpObservationFilterTests {
 	}
 
 	@Test
+	void filterShouldAcceptNoOpObservationContext() throws Exception {
+		ServerHttpObservationFilter filter = new ServerHttpObservationFilter(ObservationRegistry.NOOP);
+		filter.doFilter(this.request, this.response, this.mockFilterChain);
+
+		ServerRequestObservationContext context = (ServerRequestObservationContext) this.request
+				.getAttribute(ServerHttpObservationFilter.CURRENT_OBSERVATION_CONTEXT_ATTRIBUTE);
+		assertThat(context).isNull();
+	}
+
+	@Test
 	void filterShouldUseThrownException() throws Exception {
 		IllegalArgumentException customError = new IllegalArgumentException("custom error");
 		this.request.setAttribute(RequestDispatcher.ERROR_EXCEPTION, customError);
@@ -70,7 +82,7 @@ class ServerHttpObservationFilterTests {
 		ServerRequestObservationContext context = (ServerRequestObservationContext) this.request
 				.getAttribute(ServerHttpObservationFilter.CURRENT_OBSERVATION_CONTEXT_ATTRIBUTE);
 		assertThat(context.getError()).isEqualTo(customError);
-		assertThatHttpObservation().hasLowCardinalityKeyValue("outcome", "SERVER_ERROR");
+		assertThatHttpObservation().hasLowCardinalityKeyValue("exception", "IllegalArgumentException");
 	}
 
 	@Test
