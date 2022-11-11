@@ -95,14 +95,88 @@ public interface ErrorResponse {
 	}
 
 	/**
-	 * Build a message code for the given exception type, which consists of
-	 * {@code "problemDetail."} followed by the full {@link Class#getName() class name}.
-	 * @param exceptionType the exception type for which to build a code
+	 * Return a code to use to resolve the problem "detail" for this exception
+	 * through a {@link MessageSource}.
+	 * <p>By default this is initialized via
+	 * {@link #getDefaultDetailMessageCode(Class, String)}.
+	 */
+	default String getTitleMessageCode() {
+		return getDefaultTitleMessageCode(getClass());
+	}
+
+	/**
+	 * Resolve the {@link #getDetailMessageCode() detailMessageCode} and the
+	 * {@link #getTitleMessageCode() titleCode} through the given
+	 * {@link MessageSource}, and if found, update the "detail" and "title!"
+	 * fields respectively.
+	 * @param messageSource the {@code MessageSource} to use for the lookup
+	 * @param locale the {@code Locale} to use for the lookup
+	 */
+	default ProblemDetail updateAndGetBody(@Nullable MessageSource messageSource, Locale locale) {
+		if (messageSource != null) {
+			Object[] arguments = getDetailMessageArguments(messageSource, locale);
+			String detail = messageSource.getMessage(getDetailMessageCode(), arguments, null, locale);
+			if (detail != null) {
+				getBody().setDetail(detail);
+			}
+			String title = messageSource.getMessage(getTitleMessageCode(), null, null, locale);
+			if (title != null) {
+				getBody().setTitle(title);
+			}
+		}
+		return getBody();
+	}
+
+
+	/**
+	 * Build a message code for the "detail" field, for the given exception type.
+	 * @param exceptionType the exception type associated with the problem
 	 * @param suffix an optional suffix, e.g. for exceptions that may have multiple
 	 * error message with different arguments.
+	 * @return {@code "problemDetail."} followed by the full {@link Class#getName() class name}
 	 */
 	static String getDefaultDetailMessageCode(Class<?> exceptionType, @Nullable String suffix) {
 		return "problemDetail." + exceptionType.getName() + (suffix != null ? "." + suffix : "");
+	}
+
+	/**
+	 * Build a message code for the "title" field, for the given exception type.
+	 * @param exceptionType the exception type associated with the problem
+	 * @return {@code "problemDetail.title."} followed by the full {@link Class#getName() class name}
+	 */
+	static String getDefaultTitleMessageCode(Class<?> exceptionType) {
+		return "problemDetail.title." + exceptionType.getName();
+	}
+
+	/**
+	 * Map the given Exception to an {@link ErrorResponse}.
+	 * @param ex the Exception, mostly to derive message codes, if not provided
+	 * @param status the response status to use
+	 * @param headers optional headers to add to the response
+	 * @param defaultDetail default value for the "detail" field
+	 * @param detailMessageCode the code to use to look up the "detail" field
+	 * through a {@code MessageSource}, falling back on
+	 * {@link #getDefaultDetailMessageCode(Class, String)}
+	 * @param detailMessageArguments the arguments to go with the detailMessageCode
+	 * @return the created {@code ErrorResponse} instance
+	 */
+	static ErrorResponse createFor(
+			Exception ex, HttpStatusCode status, @Nullable HttpHeaders headers,
+			String defaultDetail, @Nullable String detailMessageCode, @Nullable Object[] detailMessageArguments) {
+
+		if (detailMessageCode == null) {
+			detailMessageCode = ErrorResponse.getDefaultDetailMessageCode(ex.getClass(), null);
+		}
+
+		ErrorResponseException errorResponse = new ErrorResponseException(
+				status, ProblemDetail.forStatusAndDetail(status, defaultDetail), null,
+				detailMessageCode, detailMessageArguments);
+
+		if (headers != null) {
+			errorResponse.getHeaders().putAll(headers);
+		}
+
+		return errorResponse;
 	}
 
 }

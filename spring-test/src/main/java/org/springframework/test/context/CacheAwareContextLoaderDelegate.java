@@ -66,6 +66,12 @@ public interface CacheAwareContextLoaderDelegate {
 	 * configured in the given {@code MergedContextConfiguration}.
 	 * <p>If the context is present in the {@code ContextCache} it will simply
 	 * be returned; otherwise, it will be loaded, stored in the cache, and returned.
+	 * <p>As of Spring Framework 6.0, implementations of this method should load
+	 * {@link ApplicationContextFailureProcessor} implementations via the
+	 * {@link org.springframework.core.io.support.SpringFactoriesLoader SpringFactoriesLoader}
+	 * mechanism, catch any exception thrown by the {@link ContextLoader}, and
+	 * delegate to each of the configured failure processors to process the context
+	 * load failure if the exception is an instance of {@link ContextLoadException}.
 	 * <p>The cache statistics should be logged by invoking
 	 * {@link org.springframework.test.context.cache.ContextCache#logStatistics()}.
 	 * @param mergedContextConfiguration the merged context configuration to use
@@ -100,19 +106,5 @@ public interface CacheAwareContextLoaderDelegate {
 	 * @see #loadContext
 	 */
 	void closeContext(MergedContextConfiguration mergedContextConfiguration, @Nullable HierarchyMode hierarchyMode);
-
-	/**
-	 * Set the {@link ApplicationContextFailureProcessor} to use.
-	 * <p>The default implementation ignores the supplied processor.
-	 * <p>Concrete implementations should override this method to store a reference
-	 * to the supplied processor and use it to process {@link ContextLoadException
-	 * ContextLoadExceptions} thrown from context loaders in
-	 * {@link #loadContext(MergedContextConfiguration)}.
-	 * @param contextFailureProcessor the context failure processor to use
-	 * @since 6.0
-	 */
-	default void setContextFailureProcessor(ApplicationContextFailureProcessor contextFailureProcessor) {
-		// no-op
-	}
 
 }

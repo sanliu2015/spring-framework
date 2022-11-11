@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -450,14 +451,19 @@ class DefaultWebClient implements WebClient {
 		@SuppressWarnings("deprecation")
 		public Mono<ClientResponse> exchange() {
 			ClientRequestObservationContext observationContext = new ClientRequestObservationContext();
-			ClientRequest request = (this.inserter != null ?
-					initRequestBuilder().body(this.inserter).build() :
-					initRequestBuilder().build());
-			return Mono.defer(() -> {
-				Observation observation = ClientHttpObservationDocumentation.HTTP_REQUEST.observation(observationConvention,
-						DEFAULT_OBSERVATION_CONVENTION, () -> observationContext, observationRegistry).start();
-				observationContext.setCarrier(request);
+			ClientRequest.Builder requestBuilder = this.inserter != null ?
+					initRequestBuilder().body(this.inserter) :
+					initRequestBuilder();
+			return Mono.deferContextual(contextView -> {
+				Observation observation = ClientHttpObservationDocumentation.HTTP_REACTIVE_CLIENT_EXCHANGES.observation(observationConvention,
+						DEFAULT_OBSERVATION_CONVENTION, () -> observationContext, observationRegistry);
+				observationContext.setCarrier(requestBuilder);
+				observation
+						.parentObservation(contextView.getOrDefault(ObservationThreadLocalAccessor.KEY, null))
+						.start();
+				ClientRequest request = requestBuilder.build();
 				observationContext.setUriTemplate((String) request.attribute(URI_TEMPLATE_ATTRIBUTE).orElse(null));
+				observationContext.setRequest(request);
 				Mono<ClientResponse> responseMono = exchangeFunction.exchange(request)
 						.checkpoint("Request to " + this.httpMethod.name() + " " + this.uri + " [DefaultWebClient]")
 						.switchIfEmpty(NO_HTTP_CLIENT_RESPONSE_ERROR);

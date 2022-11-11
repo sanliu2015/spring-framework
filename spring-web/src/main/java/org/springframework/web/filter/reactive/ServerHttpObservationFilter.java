@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -101,7 +102,7 @@ public class ServerHttpObservationFilter implements WebFilter {
 	}
 
 	private Publisher<Void> filter(ServerWebExchange exchange, ServerRequestObservationContext observationContext, Mono<Void> call) {
-		Observation observation = ServerHttpObservationDocumentation.HTTP_REQUESTS.observation(this.observationConvention,
+		Observation observation = ServerHttpObservationDocumentation.HTTP_REACTIVE_SERVER_EXCHANGES.observation(this.observationConvention,
 				DEFAULT_OBSERVATION_CONVENTION, () -> observationContext, this.observationRegistry);
 		observation.start();
 		return call.doOnEach(signal -> {
@@ -117,7 +118,8 @@ public class ServerHttpObservationFilter implements WebFilter {
 				.doOnCancel(() -> {
 					observationContext.setConnectionAborted(true);
 					observation.stop();
-				});
+				})
+				.contextWrite(context -> context.put(ObservationThreadLocalAccessor.KEY, observation));
 	}
 
 	private void onTerminalSignal(Observation observation, ServerWebExchange exchange) {
