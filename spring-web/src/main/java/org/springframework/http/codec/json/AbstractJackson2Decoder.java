@@ -52,9 +52,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 
 /**
- * Abstract base class for Jackson 2.9 decoding, leveraging non-blocking parsing.
- *
- * <p>Compatible with Jackson 2.9.7 and higher.
+ * Abstract base class for Jackson 2.x decoding, leveraging non-blocking parsing.
  *
  * @author Sebastien Deleuze
  * @author Rossen Stoyanchev
