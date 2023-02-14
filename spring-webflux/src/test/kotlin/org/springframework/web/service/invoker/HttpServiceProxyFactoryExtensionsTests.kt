@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-package org.springframework.test.web.servlet.htmlunit;
+package org.springframework.web.service.invoker
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.junit.jupiter.api.Test
 
 /**
- * @author Rob Winch
- * @since 4.2
+ * Tests for [HttpServiceProxyFactory] Kotlin extensions.
+ *
+ * @author Sebastien Deleuze
  */
-@Controller
-public class ForwardController {
+class HttpServiceProxyFactoryExtensionsTests {
 
-	@RequestMapping("/forward")
-	public String forward() {
-		return "forward:/a";
-	}
+	private val proxyFactory = mockk<HttpServiceProxyFactory>()
 
-	@RequestMapping("/infiniteForward")
-	public String infiniteForward() {
-		return "forward:/infiniteForward";
+	@Test
+	fun `createClient extension`() {
+		every { proxyFactory.createClient(String::class.java) } returns ""
+		proxyFactory.createClient<String>()
+		verify { proxyFactory.createClient(String::class.java) }
 	}
 
 }

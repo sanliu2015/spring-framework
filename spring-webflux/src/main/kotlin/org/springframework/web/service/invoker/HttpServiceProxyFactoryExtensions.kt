@@ -14,26 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.test.web.servlet.htmlunit;
-
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+package org.springframework.web.service.invoker
 
 /**
- * @author Rob Winch
- * @since 4.2
+ *  Extension for [HttpServiceProxyFactory.createClient] providing a `createClient<Foo>()` variant.
+ *
+ * @author Sebastien Deleuze
+ * @since 6.0.5
  */
-@Controller
-public class ForwardController {
-
-	@RequestMapping("/forward")
-	public String forward() {
-		return "forward:/a";
-	}
-
-	@RequestMapping("/infiniteForward")
-	public String infiniteForward() {
-		return "forward:/infiniteForward";
-	}
-
-}
+inline fun <reified T : Any> HttpServiceProxyFactory.createClient(): T =
+	createClient(T::class.java)
