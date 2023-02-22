@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package org.springframework.web.service.invoker
+package test.aspect;
+
+import org.aspectj.lang.annotation.Pointcut;
 
 /**
- * Extension for [HttpServiceProxyFactory.createClient] providing a `createClient<Foo>()` variant.
- *
- * @author Sebastien Deleuze
- * @since 6.0.5
+ * @author Sam Brannen
+ * @since 6.0.6
  */
-inline fun <reified T : Any> HttpServiceProxyFactory.createClient(): T =
-	createClient(T::class.java)
+public class CommonPointcuts {
+
+	@Pointcut("execution(* getAge())")
+	public void getAgeExecution() {}
+
+}
