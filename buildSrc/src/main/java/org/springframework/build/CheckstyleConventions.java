@@ -49,7 +49,7 @@ public class CheckstyleConventions {
 			project.getPlugins().apply(CheckstylePlugin.class);
 			project.getTasks().withType(Checkstyle.class).forEach(checkstyle -> checkstyle.getMaxHeapSize().set("1g"));
 			CheckstyleExtension checkstyle = project.getExtensions().getByType(CheckstyleExtension.class);
-			checkstyle.setToolVersion("10.9.3");
+			checkstyle.setToolVersion("10.10.0");
 			checkstyle.getConfigDirectory().set(project.getRootProject().file("src/checkstyle"));
 			String version = SpringJavaFormatPlugin.class.getPackage().getImplementationVersion();
 			DependencySet checkstyleDependencies = project.getConfigurations().getByName("checkstyle").getDependencies();
@@ -63,7 +63,7 @@ public class CheckstyleConventions {
 		NoHttpExtension noHttp = project.getExtensions().getByType(NoHttpExtension.class);
 		noHttp.setAllowlistFile(project.file("src/nohttp/allowlist.lines"));
 		noHttp.getSource().exclude("**/test-output/**", "**/.settings/**",
-				"**/.classpath", "**/.project");
+				"**/.classpath", "**/.project", "**/.gradle/**");
 		List<String> buildFolders = List.of("bin", "build", "out");
 		project.allprojects(subproject -> {
 			Path rootPath = project.getRootDir().toPath();
