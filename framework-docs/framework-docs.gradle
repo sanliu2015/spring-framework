@@ -11,7 +11,7 @@ apply from: "${rootDir}/gradle/publications.gradle"
 
 antora {
 	version = '3.2.0-alpha.2'
-	playbook = layout.buildDirectory.file('cached-antora-playbook.yml').get().getAsFile()
+	playbook = 'cached-antora-playbook.yml'
 	playbookProvider {
 		repository = 'spring-projects/spring-framework'
 		branch = 'docs-build'
@@ -43,10 +43,6 @@ tasks.named("generateAntoraYml") {
 
 tasks.create("generateAntoraResources") {
 	dependsOn 'generateAntoraYml'
-}
-
-tasks.named("check") {
-	dependsOn 'antora'
 }
 
 jar {
@@ -102,7 +98,7 @@ task api(type: Javadoc) {
 		overview = "framework-docs/src/docs/api/overview.html"
 		splitIndex = true
 		links(project.ext.javadocLinks)
-		addBooleanOption('Xdoclint:syntax', true) // only check syntax with doclint
+		addBooleanOption('Xdoclint:syntax,reference', true) // only check syntax and reference with doclint
 		addBooleanOption('Werror', true) // fail build on Javadoc warnings
 	}
 	source moduleProjects.collect { project ->
